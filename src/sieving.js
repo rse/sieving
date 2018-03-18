@@ -241,11 +241,17 @@ class Sieving {
     }
 
     /*  sieve items by evaluating against the Abstract Syntax Tree (AST)  */
-    sieve (items, fuzzy = false) {
+    sieve (items, options = {}) {
+        /*  sanity check arguments  */
         if (!(typeof items === "object" && items instanceof Array))
             throw new Error("filter: invalid items argument (expected array)")
-        if (typeof fuzzy !== "boolean")
-            throw new Error("filter: invalid fuzzy argument (expected boolean)")
+        if (typeof options !== "object")
+            throw new Error("filter: invalid options argument (expected object)")
+
+        /*  determine options  */
+        options = Object.assign({}, { fuzzy: false }, options)
+
+        /*  evaluate the AST  */
         return this.evaluate((ns, type, value) => {
             const valueOfItem = (item) => {
                 if (typeof item === "string")
@@ -264,13 +270,13 @@ class Sieving {
                 else if (type === "quoted") {
                     return (
                         itemValue === value
-                        || (fuzzy && dice(itemValue, value) >= 0.5)
+                        || (options.fuzzy && dice(itemValue, value) >= 0.5)
                     )
                 }
                 else if (type === "bare") {
                     return (
                         itemValue.indexOf(value) >= 0
-                        || (fuzzy && dice(itemValue, value) >= 0.5)
+                        || (options.fuzzy && dice(itemValue, value) >= 0.5)
                     )
                 }
             })
@@ -281,7 +287,7 @@ class Sieving {
     static sieve (items, query, options = {}) {
         const sieving = new Sieving(options)
         sieving.parse(query)
-        return sieving.sieve(items, options.fuzzy)
+        return sieving.sieve(items, options)
     }
 }
 
