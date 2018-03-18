@@ -81,6 +81,14 @@ bareword   ::=  /.+/                                // bareword term
 number     ::=  /\d*\.\d+/ | /\d+/                  // floating or integer number
 ```
 
+```js
+const Sieving = require("sieving")
+let items = [ "foo", "bar", "baz", "quux", "foo:bar:quux", "foo:baz:quux" ]
+console.log(Sieving.sieve(items, "foo")) // -> [ "foo" ]
+console.log(Sieving.sieve(items, "fox")) // -> []
+console.log(Sieving.sieve(items, "fox", { fuzzy: true })) // -> [ "foo" ]
+```
+
 Application Programming Interface (API)
 ---------------------------------------
 
