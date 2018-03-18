@@ -122,36 +122,39 @@ class Sieving {
 
         /*  perform set-operations on result lists  */
         const listUnion = (a, b) => {
-            let idx = {}
-            a.forEach((x) => { idx[x.id] = x })
-            b.forEach((x) => { idx[x.id] = x })
             let r = []
-            Object.keys(idx).forEach((id) => {
-                r.push(idx[id])
+            let idx = {}
+            a.forEach((x) => {
+                r.push(x)
+                idx[x[this.options.fieldId]] = true
+            })
+            b.forEach((x) => {
+                if (!idx[x[this.options.fieldId]])
+                    r.push(x)
             })
             return r
         }
         const listIntersection = (a, b) => {
-            let idx1 = {}
-            let idx2 = {}
-            a.forEach((x) => { idx1[x.id] = x })
-            b.forEach((x) => { idx2[x.id] = x })
             let r = []
-            Object.keys(idx1).forEach((id) => {
-                if (idx2[id])
-                    r.push(idx1[id])
+            let idx = {}
+            b.forEach((x) => {
+                idx[x[this.options.fieldId]] = x
+            })
+            a.forEach((x) => {
+                if (idx[x[this.options.fieldId]])
+                    r.push(x)
             })
             return r
         }
         const listSubtraction = (a, b) => {
-            let idx1 = {}
-            let idx2 = {}
-            a.forEach((x) => { idx1[x.id] = x })
-            b.forEach((x) => { idx2[x.id] = x })
             let r = []
-            Object.keys(idx1).forEach((id) => {
-                if (!idx2[id])
-                    r.push(idx1[id])
+            let idx = {}
+            b.forEach((x) => {
+                idx[x[this.options.fieldId]] = x
+            })
+            a.forEach((x) => {
+                if (!idx[x[this.options.fieldId]])
+                    r.push(x)
             })
             return r
         }
