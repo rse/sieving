@@ -278,7 +278,7 @@ class Sieving {
     static sieve (items, query, options = {}) {
         const sieving = new Sieving(options)
         sieving.parse(query)
-        return sieving.filter(items, options.fuzzy)
+        return sieving.sieve(items, options.fuzzy)
     }
 }
 
