@@ -1,6 +1,6 @@
 
 Sieving
-========
+=======
 
 Query-Based Item-List Reduction for JavaScript
 
@@ -59,8 +59,8 @@ queries [1,1]
 [ 'baz', 'foo:baz:quux', 'foo', 'bar' ]
 ```
 
-Query Syntax Grammar
---------------------
+Query Syntax
+------------
 
 The following is a symbolic grammar describing the supported
 query syntax. For more subtle details, see the [actual PEG grammar](src/sieving.pegjs)
@@ -82,11 +82,11 @@ number     ::=  /\d*\.\d+/ | /\d+/                  // floating or integer numbe
 ```
 
 ```js
-const Sieving = require("sieving")
+const { sieve } = require("sieving")
 let items = [ "foo", "bar", "baz", "quux", "foo:bar:quux", "foo:baz:quux" ]
-console.log(Sieving.sieve(items, "foo")) // -> [ "foo" ]
-console.log(Sieving.sieve(items, "fox")) // -> []
-console.log(Sieving.sieve(items, "fox", { fuzzy: true })) // -> [ "foo" ]
+console.log(sieve(items, "foo")) // -> [ "foo" ]
+console.log(sieve(items, "fox")) // -> []
+console.log(sieve(items, "fox", { fuzzy: true })) // -> [ "foo" ]
 ```
 
 Application Programming Interface (API)
