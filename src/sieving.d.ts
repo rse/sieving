@@ -24,6 +24,7 @@
 
 declare module "Sieving" {
     class Sieving {
+        /*  create Sieving instance  */
         public constructor(options?: {
             wrap:      boolean,
             fieldId:   string,
@@ -31,13 +32,16 @@ declare module "Sieving" {
             fieldNs:   string
         })
 
+        /*  parse query into AST  */
         parse(
             query: string
         ): void;
 
+        /*  dump AST  */
         dump(
         ): void;
 
+        /*  evaluate AST  */
         evaluate(
             callback: (
                 ns:    string,
@@ -46,11 +50,13 @@ declare module "Sieving" {
             ) => any[]
         ): any[];
 
+        /*  sieve items  */
         sieve(
             items: any[],
             fuzzy: boolean
         ): any[];
 
+        /*  static all-in-one sieving function  */
         static sieve(
             items: any[],
             query: string,
