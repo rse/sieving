@@ -62,6 +62,10 @@ queries [1,1]
 Query Syntax Grammar
 --------------------
 
+The following is a symbolic grammar describing the supported
+query syntax. For more subtle details, see the [actual PEG grammar](src/sieving.pegjs)
+of the underlying parser.
+
 ```
 queries    ::=  query ("," query)*
 query      ::=  term (" " term)*
