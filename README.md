@@ -30,7 +30,7 @@ Usage
 ```js
 const Sieving = require("sieving")
 
-let items = [ "foo", "bar", "baz", "quux", "foo:bar:quux", "foo:baz:quux" ]
+let items = [ "foo", "bar", "baz", "quux", "foo bar", "foo baz", "foo quux", "foo bar quux" ]
 
 /*  step-by-step usage  */
 let sieving = new Sieving()
@@ -55,8 +55,27 @@ queries [1,1]
 └── query [1,17]
     └── term (value: "baz", type: "bare", boost: 1) [1,17]
 
-[ 'baz', 'foo:baz:quux', 'foo', 'bar' ]
-[ 'baz', 'foo:baz:quux', 'foo', 'bar' ]
+[ 'baz', 'foo', 'foo bar', 'foo baz', 'bar' ]
+[ 'baz', 'foo', 'foo bar', 'foo baz', 'bar' ]
+```
+
+Examples
+--------
+
+```js
+const { sieve }  = require(".")
+const { expect } = require("chai")
+
+let items = [ "foo", "bar", "baz", "quux", "foo bar baz quux" ]
+
+expect(sieve(items, "foo"))  .deep.equal([ "foo", "foo bar baz quux" ])
+expect(sieve(items, "fo?"))  .deep.equal([ "foo", "foo bar baz quux" ])
+expect(sieve(items, "/fo./")).deep.equal([ "foo", "foo bar baz quux" ])
+expect(sieve(items, "'foo'")).deep.equal([ "foo" ])
+
+expect(sieve(items, "bax",  { fuzzy: true })).deep.equal([ "bar", "baz" ])
+expect(sieve(items, "fox",  { fuzzy: true })).deep.equal([ "foo" ])
+expect(sieve(items, "qxux", { fuzzy: true })).deep.equal([ "quux" ])
 ```
 
 Query Syntax
@@ -81,14 +100,6 @@ bareword   ::=  /.+/                                // bareword term
 number     ::=  /\d*\.\d+/ | /\d+/                  // floating or integer number
 ```
 
-```js
-const { sieve } = require("sieving")
-let items = [ "foo", "bar", "baz", "quux", "foo:bar:quux", "foo:baz:quux" ]
-console.log(sieve(items, "foo")) // -> [ "foo" ]
-console.log(sieve(items, "fox")) // -> []
-console.log(sieve(items, "fox", { fuzzy: true })) // -> [ "foo" ]
-```
-
 Application Programming Interface (API)
 ---------------------------------------
 
@@ -101,10 +112,10 @@ declare module "Sieving" {
         /*  create Sieving instance  */
         public constructor(
             options?: {
-                wrap:      boolean,  /*  whether to internally wrap items  */
-                fieldId:   string,   /*  name of identifier field in items  */
-                fieldPrio: string,   /*  name of priority field in items  */
-                fieldNs:   string    /*  name of namespace field in items  */
+                wrap:      boolean,  /*  whether to internally wrap items (default: true)  */
+                fieldId:   string,   /*  name of identifier field in items (default: "id")  */
+                fieldPrio: string,   /*  name of priority field in items (default: "prio" ) */
+                fieldNs:   string    /*  name of namespace field in items (default: "")  */
             }
         )
 
@@ -120,7 +131,7 @@ declare module "Sieving" {
         /*  evaluate internal AST (for custom matching)  */
         evaluate(
             queryResults: (
-                ns:        string,   /*  term namespace (empty string by default)  */
+                ns:        string,   /*  term namespace (default: "")  */
                 type:      string,   /*  term type ("regexp", "glob", "quoted", or "bare")  */
                 value:     string    /*  term value  */
             ) => any[]
@@ -130,7 +141,9 @@ declare module "Sieving" {
         sieve(
             items: any[],            /*  list of items to sieve/filter  */
             options?: {
-                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
+                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms (default: false)  */
+                maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
+                minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
             }
         ): any[];
 
@@ -139,11 +152,14 @@ declare module "Sieving" {
             items: any[],            /*  list of items to sieve/filter  */
             query: string,           /*  query string  */
             options?: {
-                wrap:      boolean,  /*  whether to internally wrap items  */
-                fieldId:   string,   /*  name of identifier field in items  */
-                fieldPrio: string,   /*  name of priority field in items  */
-                fieldNs:   string,   /*  name of namespace field in items  */
-                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
+                wrap:      boolean,  /*  whether to internally wrap items (default: true)  */
+                fieldId:   string,   /*  name of identifier field in items (default: "id")  */
+                fieldPrio: string,   /*  name of priority field in items (default: "prio" ) */
+                fieldNs:   string,   /*  name of namespace field in items (default: "")  */
+                fuzzy:     boolean,  /*  whether to fuzzy match quoted and bare terms (default: false)  */
+                maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
+                minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
+                debug:     boolean   /*  whether to dump the internal AST to stdout  */
             }
         ): any[];
     }

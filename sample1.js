@@ -1,7 +1,7 @@
 
 const Sieving = require(".")
 
-let items = [ "foo", "bar", "baz", "quux", "foo:bar:quux", "foo:baz:quux" ]
+let items = [ "foo", "bar", "baz", "quux", "foo bar", "foo baz", "foo quux", "foo bar quux" ]
 
 /*  step-by-step usage  */
 let sieving = new Sieving()
