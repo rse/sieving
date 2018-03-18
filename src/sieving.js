@@ -37,8 +37,8 @@ var PEGparser = PEG.generateFromFile(`${__dirname}/sieving.pegjs`, {
     trace: false
 })
 
-/*  export API class  */
-module.exports = class Query {
+/*  the API class  */
+class Sieving {
     /*  create API instance  */
     constructor (options = {}) {
         /*  determine options  */
@@ -54,15 +54,15 @@ module.exports = class Query {
     }
 
     /*  parse query string into Abstract Syntax Tree (AST)  */
-    parse (search) {
+    parse (query) {
         /*  sanity check argument  */
-        if (typeof search !== "string")
-            throw new Error("invalid search argument")
+        if (typeof query !== "string")
+            throw new Error("invalid query argument")
 
         /*  parse specification into Abstract Syntax Tree (AST)  */
         const asty = new ASTY()
-        let result = PEGUtil.parse(PEGparser, search, {
-            startRule: "search",
+        let result = PEGUtil.parse(PEGparser, query, {
+            startRule: "root",
             makeAST: (line, column, offset, args) => {
                 return asty.create.apply(asty, args).pos(line, column, offset)
             }
@@ -237,8 +237,8 @@ module.exports = class Query {
         return result
     }
 
-    /*  filter items by evaluating against the Abstract Syntax Tree (AST)  */
-    filter (items, fuzzy = false) {
+    /*  sieve items by evaluating against the Abstract Syntax Tree (AST)  */
+    sieve (items, fuzzy = false) {
         if (!(typeof items === "object" && items instanceof Array))
             throw new Error("filter: invalid items argument (expected array)")
         if (typeof fuzzy !== "boolean")
@@ -273,4 +273,15 @@ module.exports = class Query {
             })
         })
     }
+
+    /*  static function for all-in-one sieving  */
+    static sieve (items, query, options = {}) {
+        const sieving = new Sieving(options)
+        sieving.parse(query)
+        return sieving.filter(items, options.fuzzy)
+    }
 }
+
+/*  export the API class  */
+module.exports = Sieving
+

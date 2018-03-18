@@ -27,7 +27,7 @@
     var ast    = options.util.makeAST   (location, options)
 }
 
-search
+root
     =   q:queries eof {
             return q
         }
