@@ -27,10 +27,10 @@ declare module "Sieving" {
         /*  create Sieving instance  */
         public constructor(
             options?: {
-                wrap:      boolean,  /*  whether to internally wrap items  */
-                fieldId:   string,   /*  name of identifier field in items  */
-                fieldPrio: string,   /*  name of priority field in items  */
-                fieldNs:   string    /*  name of namespace field in items  */
+                wrap:      boolean,  /*  whether to internally wrap items (default: true)  */
+                fieldId:   string,   /*  name of identifier field in items (default: "id")  */
+                fieldPrio: string,   /*  name of priority field in items (default: "prio" ) */
+                fieldNs:   string    /*  name of namespace field in items (default: "")  */
             }
         )
 
@@ -46,7 +46,7 @@ declare module "Sieving" {
         /*  evaluate internal AST (for custom matching)  */
         evaluate(
             queryResults: (
-                ns:        string,   /*  term namespace (empty string by default)  */
+                ns:        string,   /*  term namespace (default: "")  */
                 type:      string,   /*  term type ("regexp", "glob", "quoted", or "bare")  */
                 value:     string    /*  term value  */
             ) => any[]
@@ -56,7 +56,9 @@ declare module "Sieving" {
         sieve(
             items: any[],            /*  list of items to sieve/filter  */
             options?: {
-                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
+                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms (default: false)  */
+                maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
+                minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
             }
         ): any[];
 
@@ -65,11 +67,13 @@ declare module "Sieving" {
             items: any[],            /*  list of items to sieve/filter  */
             query: string,           /*  query string  */
             options?: {
-                wrap:      boolean,  /*  whether to internally wrap items  */
-                fieldId:   string,   /*  name of identifier field in items  */
-                fieldPrio: string,   /*  name of priority field in items  */
-                fieldNs:   string,   /*  name of namespace field in items  */
-                fuzzy:     boolean,  /*  whether to fuzzy match quoted and bare terms  */
+                wrap:      boolean,  /*  whether to internally wrap items (default: true)  */
+                fieldId:   string,   /*  name of identifier field in items (default: "id")  */
+                fieldPrio: string,   /*  name of priority field in items (default: "prio" ) */
+                fieldNs:   string,   /*  name of namespace field in items (default: "")  */
+                fuzzy:     boolean,  /*  whether to fuzzy match quoted and bare terms (default: false)  */
+                maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
+                minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
                 debug:     boolean   /*  whether to dump the internal AST to stdout  */
             }
         ): any[];

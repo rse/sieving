@@ -250,7 +250,11 @@ class Sieving {
             throw new Error("filter: invalid options argument (expected object)")
 
         /*  determine options  */
-        options = Object.assign({}, { fuzzy: false }, options)
+        options = Object.assign({}, {
+            fuzzy:  false,
+            maxLS:  2,
+            minDC:  0.50
+        }, options)
 
         /*  evaluate the AST  */
         return this.evaluate((ns, type, value) => {
@@ -271,13 +275,13 @@ class Sieving {
                 else if (type === "quoted")
                     return (itemValue === value
                         || (options.fuzzy
-                            && (dice(itemValue, value) >= 0.5
-                                || levenshtein.get(itemValue, value) <= 2)))
+                            && (dice(itemValue, value) >= options.minDC
+                                || levenshtein.get(itemValue, value) <= options.maxLS)))
                 else if (type === "bare")
                     return (itemValue.indexOf(value) >= 0
                         || (options.fuzzy
-                            && (dice(itemValue, value) >= 0.5
-                                || levenshtein.get(itemValue, value) <= 2)))
+                            && (dice(itemValue, value) >= options.minDC
+                                || levenshtein.get(itemValue, value) <= options.maxLS)))
             })
         })
     }
