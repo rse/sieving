@@ -13,9 +13,12 @@ Query-Based Item-List Reduction for JavaScript
 About
 -----
 
-This is a JavaScript library for reducing/filtering a JavaScript list
+Sieving is a JavaScript library for reducing/filtering a JavaScript list
 of items, based on a query language. It is intended to be used for item
 filtering or searching purposes within browser or Node.js environments.
+Internally, Sieving is based on a full-blown query parser, supports
+optional fuzzy matching of items, and supports union, intersection and
+subtraction of the result sets.
 
 Installation
 ------------
