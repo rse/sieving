@@ -23,13 +23,14 @@
 */
 
 /*  external requirements  */
-const ASTY       = require("asty-astq")
-const PEG        = require("pegjs-otf")
-const PEGUtil    = require("pegjs-util")
-const chalk      = require("chalk")
-const objectHash = require("object-hash")
-const minimatch  = require("minimatch")
-const dice       = require("dice-coefficient")
+const ASTY        = require("asty-astq")
+const PEG         = require("pegjs-otf")
+const PEGUtil     = require("pegjs-util")
+const chalk       = require("chalk")
+const objectHash  = require("object-hash")
+const minimatch   = require("minimatch")
+const dice        = require("dice-coefficient")
+const levenshtein = require("fast-levenshtein")
 
 /*  pre-parse PEG grammar (replaced by browserify)  */
 var PEGparser = PEG.generateFromFile(`${__dirname}/sieving.pegjs`, {
@@ -267,18 +268,16 @@ class Sieving {
                     return value.exec(itemValue)
                 else if (type === "glob")
                     return minimatch(itemValue, `*${value}*`)
-                else if (type === "quoted") {
-                    return (
-                        itemValue === value
-                        || (options.fuzzy && dice(itemValue, value) >= 0.5)
-                    )
-                }
-                else if (type === "bare") {
-                    return (
-                        itemValue.indexOf(value) >= 0
-                        || (options.fuzzy && dice(itemValue, value) >= 0.5)
-                    )
-                }
+                else if (type === "quoted")
+                    return (itemValue === value
+                        || (options.fuzzy
+                            && (dice(itemValue, value) >= 0.5
+                                || levenshtein.get(itemValue, value) <= 2)))
+                else if (type === "bare")
+                    return (itemValue.indexOf(value) >= 0
+                        || (options.fuzzy
+                            && (dice(itemValue, value) >= 0.5
+                                || levenshtein.get(itemValue, value) <= 2)))
             })
         })
     }
