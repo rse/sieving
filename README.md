@@ -29,6 +29,34 @@ Usage
 
 ```js
 const Sieving = require("sieving")
+
+let items = [ "foo", "bar", "baz", "quux", "foo:bar:quux", "foo:baz:quux" ]
+
+/*  step-by-step usage  */
+let sieving = new Sieving()
+sieving.parse("foo +bar -quux, baz^")
+sieving.dump()
+let result = sieving.sieve(items)
+console.log(result)
+
+/*  all-in-one usage  */
+result = Sieving.sieve(items, "foo +bar -quux, baz^")
+console.log(result)
+```
+
+Output:
+
+```
+queries [1,1]
+├── query [1,1]
+│   ├── term (value: "foo", type: "bare") [1,1]
+│   ├── term (op: "union", value: "bar", type: "bare") [1,5]
+│   └── term (op: "subtraction", value: "quux", type: "bare") [1,10]
+└── query [1,17]
+    └── term (value: "baz", type: "bare", boost: 1) [1,17]
+
+[ 'baz', 'foo:baz:quux', 'foo', 'bar' ]
+[ 'baz', 'foo:baz:quux', 'foo', 'bar' ]
 ```
 
 Application Programming Interface (API)
