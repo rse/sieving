@@ -112,7 +112,8 @@ module.exports = function (grunt) {
                         "chalk",
                         "object-hash",
                         "minimatch",
-                        "dice-coefficient"
+                        "dice-coefficient",
+                        "fast-levenshtein"
                     ],
                     browserifyOptions: {
                         standalone: "Sieving",
