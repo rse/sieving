@@ -92,7 +92,63 @@ console.log(Sieving.sieve(items, "fox", { fuzzy: true })) // -> [ "foo" ]
 Application Programming Interface (API)
 ---------------------------------------
 
-```js
+The following is the API as a TypeScript declaration.
+See also the [actual TypeScript definition file](src/sieving.d.ts).
+
+```ts
+declare module "Sieving" {
+    class Sieving {
+        /*  create Sieving instance  */
+        public constructor(
+            options?: {
+                wrap:      boolean,  /*  whether to internally wrap items  */
+                fieldId:   string,   /*  name of identifier field in items  */
+                fieldPrio: string,   /*  name of priority field in items  */
+                fieldNs:   string    /*  name of namespace field in items  */
+            }
+        )
+
+        /*  parse query into an internal AST  */
+        parse(
+            query: string            /*  query string  */
+        ): void;
+
+        /*  dump internal AST to console (for debugging purposes only)  */
+        dump(
+        ): void;
+
+        /*  evaluate internal AST (for custom matching)  */
+        evaluate(
+            queryResults: (
+                ns:        string,   /*  term namespace (empty string by default)  */
+                type:      string,   /*  term type ("regexp", "glob", "quoted", or "bare")  */
+                value:     string    /*  term value  */
+            ) => any[]
+        ): any[];
+
+        /*  sieve items by evaluating query with standard matching  */
+        sieve(
+            items: any[],            /*  list of items to sieve/filter  */
+            options?: {
+                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
+            }
+        ): any[];
+
+        /*  sieve items by evaluating query with standard matching (stand-alone)  */
+        static sieve(
+            items: any[],            /*  list of items to sieve/filter  */
+            query: string,           /*  query string  */
+            options?: {
+                wrap:      boolean,  /*  whether to internally wrap items  */
+                fieldId:   string,   /*  name of identifier field in items  */
+                fieldPrio: string,   /*  name of priority field in items  */
+                fieldNs:   string,   /*  name of namespace field in items  */
+                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
+            }
+        ): any[];
+    }
+    export = Sieving
+}
 ```
 
 License
