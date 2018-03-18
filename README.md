@@ -67,18 +67,18 @@ query syntax. For more subtle details, see the [actual PEG grammar](src/sieving.
 of the underlying parser.
 
 ```
-queries    ::=  query ("," query)*
-query      ::=  term (" " term)*
-term       ::=  operation? namespace? text boost?
-operation  ::=  "+" | "-"
-namespace  ::=  id ":"
-text       ::=  quoted | regexp | glob | bareword
-boost      ::=  "^" number?
-quoted     ::=  /"(\\"|[^"])*"/ | /'(\\'|[^'])*'/
-regexp     ::=  /\/(\\\/|[^\/])*\//
-glob       ::=  /.*[*?[\]{}].*/
-bareword   ::=  /.+/
-number     ::=  /\d*\.\d+/ | /\d+/
+queries    ::=  query ("," query)*                  // union of queries
+query      ::=  term (" " term)*                    // intersection of terms
+term       ::=  operation? namespace? text boost?   // single query term
+operation  ::=  "+" | "-"                           // force union or subtraction of term
+namespace  ::=  id ":"                              // match against a particular namespace
+text       ::=  quoted | regexp | glob | bareword   // four variants of the term
+boost      ::=  "^" number?                         // optionally boost the results
+quoted     ::=  /"(\\"|[^"])*"/ | /'(\\'|[^'])*'/   // double- or single-quoted term
+regexp     ::=  /\/(\\\/|[^\/])*\//                 // regular expression term
+glob       ::=  /.*[*?[\]{}].*/                     // glob-style term
+bareword   ::=  /.+/                                // bareword term
+number     ::=  /\d*\.\d+/ | /\d+/                  // floating or integer number
 ```
 
 Application Programming Interface (API)
