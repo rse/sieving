@@ -69,7 +69,8 @@ declare module "Sieving" {
                 fieldId:   string,   /*  name of identifier field in items  */
                 fieldPrio: string,   /*  name of priority field in items  */
                 fieldNs:   string,   /*  name of namespace field in items  */
-                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
+                fuzzy:     boolean,  /*  whether to fuzzy match quoted and bare terms  */
+                debug:     boolean   /*  whether to dump the internal AST to stdout  */
             }
         ): any[];
     }

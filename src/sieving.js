@@ -287,6 +287,8 @@ class Sieving {
     static sieve (items, query, options = {}) {
         const sieving = new Sieving(options)
         sieving.parse(query)
+        if (options.debug)
+            sieving.dump()
         return sieving.sieve(items, options)
     }
 }
