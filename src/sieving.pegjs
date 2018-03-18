@@ -43,7 +43,7 @@ query
         }
 
 term
-    =   op:operation? ns:namespace? term:(quoted / bareword / regexp / glob) boost:boost? {
+    =   op:operation? ns:namespace? term:(regexp / glob / quoted / bareword) boost:boost? {
             return ast("term").merge(op).merge(ns).merge(term).merge(boost)
         }
 
