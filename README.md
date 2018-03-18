@@ -59,6 +59,24 @@ queries [1,1]
 [ 'baz', 'foo:baz:quux', 'foo', 'bar' ]
 ```
 
+Query Syntax Grammar
+--------------------
+
+```
+queries    ::=  query ("," query)*
+query      ::=  term (" " term)*
+term       ::=  operation? namespace? text boost?
+operation  ::=  "+" | "-"
+namespace  ::=  id ":"
+text       ::=  quoted | regexp | glob | bareword
+boost      ::=  "^" number?
+quoted     ::=  /"(\\"|[^"])*"/ | /'(\\'|[^'])*'/
+regexp     ::=  /\/(\\\/|[^\/])*\//
+glob       ::=  /.*[*?[\]{}].*/
+bareword   ::=  /.+/
+number     ::=  /\d*\.\d+/ | /\d+/
+```
+
 Application Programming Interface (API)
 ---------------------------------------
 
