@@ -45,7 +45,7 @@ declare module "Sieving" {
 
         /*  evaluate internal AST (for custom matching)  */
         evaluate(
-            callback: (
+            queryResults: (
                 ns:        string,   /*  term namespace (empty string by default)  */
                 type:      string,   /*  term type ("regexp", "glob", "quoted", or "bare")  */
                 value:     string    /*  term value  */

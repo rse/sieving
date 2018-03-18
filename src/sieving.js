@@ -116,9 +116,9 @@ class Sieving {
     }
 
     /*  evaluate the Abstract Syntax Tree (AST)  */
-    evaluate (callback) {
-        if (typeof callback !== "function")
-            throw new Error("evaluate: invalid callback argument")
+    evaluate (queryResults) {
+        if (typeof queryResults !== "function")
+            throw new Error("evaluate: invalid argument")
 
         /*  perform set-operations on result lists  */
         const listUnion = (a, b) => {
@@ -197,7 +197,7 @@ class Sieving {
                 let value = node.get("value")
                 let ns    = node.get("ns")    || this.options.fieldNs
                 let boost = node.get("boost") || 0
-                result = callback(ns, type, value)
+                result = queryResults(ns, type, value)
 
                 /*  post-process result  */
                 result = result.map((item) => {
