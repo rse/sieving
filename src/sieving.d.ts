@@ -25,23 +25,25 @@
 declare module "Sieving" {
     class Sieving {
         /*  create Sieving instance  */
-        public constructor(options?: {
-            wrap:      boolean,
-            fieldId:   string,
-            fieldPrio: string,
-            fieldNs:   string
-        })
+        public constructor(
+            options?: {
+                wrap:      boolean,  /*  whether to internally wrap items  */
+                fieldId:   string,   /*  name of identifier field in items  */
+                fieldPrio: string,   /*  name of priority field in items  */
+                fieldNs:   string    /*  name of namespace field in items  */
+            }
+        )
 
         /*  parse query into an internal AST  */
         parse(
             query: string            /*  query string  */
         ): void;
 
-        /*  dump internal AST to console  */
+        /*  dump internal AST to console (for debugging purposes only)  */
         dump(
         ): void;
 
-        /*  evaluate internal AST  */
+        /*  evaluate internal AST (for custom matching)  */
         evaluate(
             callback: (
                 ns:        string,   /*  term namespace (empty string by default)  */
@@ -50,7 +52,7 @@ declare module "Sieving" {
             ) => any[]
         ): any[];
 
-        /*  sieve items by evaluating internal AST  */
+        /*  sieve items by evaluating query with standard matching  */
         sieve(
             items: any[],            /*  list of items to sieve/filter  */
             options?: {
@@ -58,7 +60,7 @@ declare module "Sieving" {
             }
         ): any[];
 
-        /*  static all-in-one sieving function  */
+        /*  sieve items by evaluating query with standard matching (stand-alone)  */
         static sieve(
             items: any[],            /*  list of items to sieve/filter  */
             query: string,           /*  query string  */
