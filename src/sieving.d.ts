@@ -32,40 +32,42 @@ declare module "Sieving" {
             fieldNs:   string
         })
 
-        /*  parse query into AST  */
+        /*  parse query into an internal AST  */
         parse(
-            query: string
+            query: string            /*  query string  */
         ): void;
 
-        /*  dump AST  */
+        /*  dump internal AST to console  */
         dump(
         ): void;
 
-        /*  evaluate AST  */
+        /*  evaluate internal AST  */
         evaluate(
             callback: (
-                ns:    string,
-                type:  string,
-                value: string
+                ns:        string,   /*  term namespace (empty string by default)  */
+                type:      string,   /*  term type ("regexp", "glob", "quoted", or "bare")  */
+                value:     string    /*  term value  */
             ) => any[]
         ): any[];
 
-        /*  sieve items  */
+        /*  sieve items by evaluating internal AST  */
         sieve(
-            items: any[],
-            fuzzy: boolean
+            items: any[],            /*  list of items to sieve/filter  */
+            options?: {
+                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
+            }
         ): any[];
 
         /*  static all-in-one sieving function  */
         static sieve(
-            items: any[],
-            query: string,
+            items: any[],            /*  list of items to sieve/filter  */
+            query: string,           /*  query string  */
             options?: {
-                wrap:      boolean,
-                fieldId:   string,
-                fieldPrio: string,
-                fieldNs:   string,
-                fuzzy:     boolean
+                wrap:      boolean,  /*  whether to internally wrap items  */
+                fieldId:   string,   /*  name of identifier field in items  */
+                fieldPrio: string,   /*  name of priority field in items  */
+                fieldNs:   string,   /*  name of namespace field in items  */
+                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms  */
             }
         ): any[];
     }
