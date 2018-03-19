@@ -123,7 +123,7 @@ module.exports = function (grunt) {
             }
         },
         mochaTest: {
-            "stdarg": {
+            "sieving": {
                 src: [ "tst/*.js" ]
             },
             options: {
