@@ -42,8 +42,8 @@ describe("Sieving Library", () => {
         expect(sieving).to.respondTo("sieve")
     })
     it("terms variants", () => {
-        expect(sieve(items, "foo"))  .deep.equal([ "foo", "foo bar baz quux" ])
-        expect(sieve(items, "fo?"))  .deep.equal([ "foo", "foo bar baz quux" ])
+        expect(sieve(items, "foo")).deep.equal([ "foo", "foo bar baz quux" ])
+        expect(sieve(items, "fo?")).deep.equal([ "foo", "foo bar baz quux" ])
         expect(sieve(items, "/fo./")).deep.equal([ "foo", "foo bar baz quux" ])
         expect(sieve(items, "'foo'")).deep.equal([ "foo" ])
     })
