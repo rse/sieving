@@ -35,7 +35,7 @@ describe("Sieving Library", () => {
     it("API availability", function () {
         expect(Sieving).to.respondTo("sieve")
         expect(typeof Sieving).to.be.equal("function")
-        let sieving = new Sieving()
+        const sieving = new Sieving()
         expect(sieving).to.respondTo("parse")
         expect(sieving).to.respondTo("dump")
         expect(sieving).to.respondTo("evaluate")
