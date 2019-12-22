@@ -62,7 +62,7 @@ class Sieving {
 
         /*  parse specification into Abstract Syntax Tree (AST)  */
         const asty = new ASTY()
-        let result = PEGUtil.parse(PEGparser, query, {
+        const result = PEGUtil.parse(PEGparser, query, {
             startRule: "root",
             makeAST: (line, column, offset, args) => {
                 return asty.create.apply(asty, args).pos(line, column, offset)
@@ -80,8 +80,8 @@ class Sieving {
             ]
         `)
         if (nodes.length > 0) {
-            let node = nodes[0]
-            let { line, column } = node.pos()
+            const node = nodes[0]
+            const { line, column } = node.pos()
             throw new Error("parse: boosting not allowed on negated term " +
                 `(line ${line}, column ${column}): "${node.get("value")}"`)
         }
@@ -92,8 +92,8 @@ class Sieving {
             ]
         `)
         if (nodes.length > 0) {
-            let node = nodes[0]
-            let { line, column } = node.pos()
+            const node = nodes[0]
+            const { line, column } = node.pos()
             throw new Error("parse: negated terms only not allowed " +
                 `(line ${line}, column ${column})`)
         }
@@ -123,8 +123,8 @@ class Sieving {
 
         /*  perform set-operations on result lists  */
         const listUnion = (a, b) => {
-            let r = []
-            let idx = {}
+            const r = []
+            const idx = {}
             a.forEach((x) => {
                 r.push(x)
                 idx[x[this.options.fieldId]] = true
@@ -136,8 +136,8 @@ class Sieving {
             return r
         }
         const listIntersection = (a, b) => {
-            let r = []
-            let idx = {}
+            const r = []
+            const idx = {}
             b.forEach((x) => {
                 idx[x[this.options.fieldId]] = x
             })
@@ -148,8 +148,8 @@ class Sieving {
             return r
         }
         const listSubtraction = (a, b) => {
-            let r = []
-            let idx = {}
+            const r = []
+            const idx = {}
             b.forEach((x) => {
                 idx[x[this.options.fieldId]] = x
             })
@@ -167,7 +167,7 @@ class Sieving {
                 /*  evaluate all queries  */
                 node.query("/ query").forEach((node) => {
                     /*  evaluate query  */
-                    let subResult = evaluateNode(node) /* RECURSION */
+                    const subResult = evaluateNode(node) /* RECURSION */
 
                     /*  process results  */
                     if (result !== null)
@@ -180,7 +180,7 @@ class Sieving {
                 /*  evaluate all terms  */
                 node.query("/ term").forEach((node) => {
                     /*  evaluate term  */
-                    let subResult = evaluateNode(node) /* RECURSION */
+                    const subResult = evaluateNode(node) /* RECURSION */
 
                     /*  process results  */
                     if (node.get("op") === "union")
@@ -194,10 +194,10 @@ class Sieving {
                 })
             }
             else if (node.type() === "term") {
-                let type  = node.get("type")
-                let value = node.get("value")
-                let ns    = node.get("ns")    || this.options.fieldNs
-                let boost = node.get("boost") || 0
+                const type  = node.get("type")
+                const value = node.get("value")
+                const ns    = node.get("ns")    || this.options.fieldNs
+                const boost = node.get("boost") || 0
                 result = queryResults(ns, type, value)
 
                 /*  post-process result  */
@@ -267,7 +267,7 @@ class Sieving {
                     throw new Error("filter: cannot determine item value of item")
             }
             return items.filter((item) => {
-                let itemValue = valueOfItem(item)
+                const itemValue = valueOfItem(item)
                 if (type === "regexp")
                     return value.exec(itemValue)
                 else if (type === "glob")
