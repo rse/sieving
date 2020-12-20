@@ -66,7 +66,7 @@ Examples
 --------
 
 ```js
-const { sieve }  = require(".")
+const { sieve }  = require("sieving")
 const { expect } = require("chai")
 
 let items = [ "foo", "bar", "baz", "quux", "foo bar baz quux" ]
