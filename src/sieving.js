@@ -224,7 +224,7 @@ class Sieving {
                     const subResult = evaluateNode(node) /* RECURSION */
 
                     /*  process results  */
-                    result = result !== null ? listUnion(result, subResult) : subResult
+                    result = (result !== null ? listUnion(result, subResult) : subResult)
                 })
             }
             else if (node.type() === "query") {
@@ -235,11 +235,11 @@ class Sieving {
 
                     /*  process results  */
                     if (node.get("op") === "union")
-                        result = result !== null ? listUnion(result, subResult) : subResult
+                        result = (result !== null ? listUnion(result, subResult) : subResult)
                     else if (node.get("op") === "subtraction")
-                        result = result !== null ? listSubtraction(result, subResult) : []
+                        result = (result !== null ? listSubtraction(result, subResult) : [])
                     else
-                        result = result !== null ? listIntersection(result, subResult) : subResult
+                        result = (result !== null ? listIntersection(result, subResult) : subResult)
                 })
             }
             else if (node.type() === "term") {
