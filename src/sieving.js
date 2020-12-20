@@ -101,8 +101,11 @@ class Sieving {
 
     /*  dump the Abstract Syntax Tree (AST) with colorization  */
     dump (colorize = true) {
+        /*  sanity check context  */
         if (this.ast === null)
-            return ""
+            throw new Error("evaluate: still no AST of query available")
+
+        /*  pass-through control to ASTy's dump functionality  */
         return this.ast.dump(Infinity, (type, text) => {
             if (colorize) {
                 switch (type) {
@@ -119,8 +122,13 @@ class Sieving {
 
     /*  evaluate the Abstract Syntax Tree (AST)  */
     evaluate (queryResults) {
+        /*  sanity check arguments  */
         if (typeof queryResults !== "function")
             throw new Error("evaluate: invalid argument")
+
+        /*  sanity check context  */
+        if (this.ast === null)
+            throw new Error("evaluate: still no AST of query available")
 
         /*  perform set-operations on result lists  */
         const listUnion = (a, b) => {
@@ -249,6 +257,10 @@ class Sieving {
             throw new Error("filter: invalid items argument (expected array)")
         if (typeof options !== "object")
             throw new Error("filter: invalid options argument (expected object)")
+
+        /*  sanity check context  */
+        if (this.ast === null)
+            throw new Error("sieve: still no AST of query available")
 
         /*  determine options  */
         options = Object.assign({}, {
