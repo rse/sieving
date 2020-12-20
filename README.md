@@ -139,6 +139,10 @@ declare module "Sieving" {
             colorize?:     boolean   /*  whether to colorize output (default: true)  */
         ): string;
 
+        /*  format internal AST into query string  */
+        format(
+        ): string;
+
         /*  evaluate internal AST (for custom matching)  */
         evaluate(
             queryResults: (

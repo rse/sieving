@@ -120,6 +120,51 @@ class Sieving {
         })
     }
 
+    /*  format Abstract Syntax Tree (AST) into query string  */
+    format () {
+        /*  evaluate an AST node  */
+        const formatNode = (node) => {
+            let query = ""
+            if (node.type() === "queries") {
+                /*  format all queries  */
+                node.query("/ query").forEach((node, i, nodes) => {
+                    /*  format query  */
+                    query += formatNode(node) /* RECURSION */
+                    if (i < nodes.length - 1)
+                        query += ", "
+                })
+            }
+            else if (node.type() === "query") {
+                /*  format all terms  */
+                node.query("/ term").forEach((node) => {
+                    /*  format term  */
+                    if (query !== "")
+                        query += " "
+                    if (node.get("op") === "union")
+                        query += "+"
+                    else if (node.get("op") === "subtraction")
+                        query += "-"
+                    query += formatNode(node) /* RECURSION */
+                })
+            }
+            else if (node.type() === "term") {
+                /*  format single term  */
+                const value = node.get("value")
+                const ns    = node.get("ns")
+                const boost = node.get("boost")
+                if (ns)
+                    query += `${ns}:`
+                query += value
+                if (boost)
+                    query += (boost === 1 ? "^" : `^${boost}`)
+            }
+            return query
+        }
+
+        /*  format AST from the root node  */
+        return formatNode(this.ast)
+    }
+
     /*  evaluate the Abstract Syntax Tree (AST)  */
     evaluate (queryResults) {
         /*  sanity check arguments  */
