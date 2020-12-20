@@ -33,7 +33,7 @@ const dice        = require("dice-coefficient")
 const levenshtein = require("fast-levenshtein")
 
 /*  pre-parse PEG grammar (replaced by browserify)  */
-var PEGparser = PEG.generateFromFile(`${__dirname}/sieving.pegjs`, {
+const PEGparser = PEG.generateFromFile(`${__dirname}/sieving.pegjs`, {
     optimize: "size",
     trace: false
 })
@@ -282,6 +282,8 @@ class Sieving {
                         || (options.fuzzy
                             && (dice(itemValue, value) >= options.minDC
                                 || levenshtein.get(itemValue, value) <= options.maxLS)))
+                else
+                    throw new Error("filter: invalid type")
             })
         })
     }

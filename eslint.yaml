@@ -64,4 +64,5 @@ rules:
     curly:                               off
     space-in-parens:                     off
     array-bracket-spacing:               off
+    node/no-path-concat:                 off
 
