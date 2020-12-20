@@ -100,10 +100,11 @@ class Sieving {
     }
 
     /*  dump the Abstract Syntax Tree (AST) with colorization  */
-    dump () {
-        if (this.ast !== null) {
-            /* eslint no-console: off */
-            console.log(this.ast.dump(Infinity, (type, text) => {
+    dump (colorize = true) {
+        if (this.ast === null)
+            return ""
+        return this.ast.dump(Infinity, (type, text) => {
+            if (colorize) {
                 switch (type) {
                     case "tree":     text = chalk.grey(text);   break
                     case "type":     text = chalk.blue(text);   break
@@ -111,9 +112,9 @@ class Sieving {
                     case "position": text = chalk.grey(text);   break
                     default:
                 }
-                return text
-            }))
-        }
+            }
+            return text
+        })
     }
 
     /*  evaluate the Abstract Syntax Tree (AST)  */
