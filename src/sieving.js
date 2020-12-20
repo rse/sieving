@@ -185,7 +185,7 @@ class Sieving {
                         result = subResult
                 })
             }
-            if (node.type() === "query") {
+            else if (node.type() === "query") {
                 /*  evaluate all terms  */
                 node.query("/ term").forEach((node) => {
                     /*  evaluate term  */
