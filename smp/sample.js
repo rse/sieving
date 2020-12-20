@@ -6,8 +6,8 @@ let items = [ "foo", "bar", "baz", "quux", "foo bar", "foo baz", "foo quux", "fo
 /*  step-by-step usage  */
 let sieving = new Sieving()
 sieving.parse("foo +bar -quux, baz^")
-console.log(sieving.dump())
 console.log(sieving.format())
+console.log(sieving.dump())
 let result = sieving.sieve(items)
 console.log(result)
 
