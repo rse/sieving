@@ -134,9 +134,10 @@ declare module "Sieving" {
             query: string            /*  query string  */
         ): void;
 
-        /*  dump internal AST to console (for debugging purposes only)  */
+        /*  dump internal AST as text (for debugging purposes only)  */
         dump(
-        ): void;
+            colorize?:     boolean   /*  whether to colorize output (default: true)  */
+        ): string;
 
         /*  evaluate internal AST (for custom matching)  */
         evaluate(
