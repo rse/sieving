@@ -65,4 +65,6 @@ rules:
     space-in-parens:                     off
     array-bracket-spacing:               off
     node/no-path-concat:                 off
+    no-useless-escape:                   off
+    no-control-regex:                    off
 

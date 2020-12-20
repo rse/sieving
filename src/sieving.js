@@ -149,12 +149,39 @@ class Sieving {
             }
             else if (node.type() === "term") {
                 /*  format single term  */
-                const value = node.get("value")
                 const ns    = node.get("ns")
+                const type  = node.get("type")
+                const value = node.get("value")
                 const boost = node.get("boost")
                 if (ns)
                     query += `${ns}:`
-                query += value
+                if (type === "regexp")
+                    query += value.toString()
+                else if (type === "double-quoted") {
+                    const escape = (ch) => {
+                        if      (ch === "\\")   return "\\\\"
+                        else if (ch === "\"")   return "\\\""
+                        else if (ch === "'")    return "'"
+                        else if (ch === "\b")   return "\\b"
+                        else if (ch === "\x0b") return "\\v"
+                        else if (ch === "\f")   return "\\f"
+                        else if (ch === "\t")   return "\\t"
+                        else if (ch === "\r")   return "\\r"
+                        else if (ch === "\n")   return "\\n"
+                        else if (ch === "\e")   return "\\e"
+                        else if (ch.match(/^[\x00-\x1f\x7f-\xff]$/))
+                            return `\\x${ch.charCodeAt(0).toString(16).padStart(2, "0")}`
+                        else if (ch.charCodeAt(0) > 0xff)
+                            return `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`
+                        else
+                            return ch
+                    }
+                    query += "\"" + value.replace(/(?:.|\r|\n)/g, (c) => escape(c)) + "\""
+                }
+                else if (type === "single-quoted")
+                    query += "'" + value.replace(/'/g, "\\'") + "'"
+                else
+                    query += value
                 if (boost)
                     query += (boost === 1 ? "^" : `^${boost}`)
             }
@@ -243,10 +270,13 @@ class Sieving {
                 })
             }
             else if (node.type() === "term") {
+                /*  gather information  */
+                const ns    = node.get("ns")    || this.options.fieldNs
                 const type  = node.get("type")
                 const value = node.get("value")
-                const ns    = node.get("ns")    || this.options.fieldNs
                 const boost = node.get("boost") || 0
+
+                /*  retrieve single result list via callback  */
                 result = queryResults(ns, type, value)
 
                 /*  post-process result  */
@@ -257,8 +287,7 @@ class Sieving {
 
                     /*  provide id field  */
                     if (item[this.options.fieldId] === undefined)
-                        item[this.options.fieldId] =
-                            objectHash(this.options.wrap ? item.value : item)
+                        item[this.options.fieldId] = objectHash(this.options.wrap ? item.value : item)
 
                     /*  provide priority field  */
                     if (item[this.options.fieldPrio] === undefined)
@@ -325,7 +354,7 @@ class Sieving {
                     return value.exec(itemValue)
                 else if (type === "glob")
                     return minimatch(itemValue, `*${value}*`)
-                else if (type === "quoted")
+                else if (type === "double-quoted" || type === "single-quoted")
                     return (itemValue === value
                         || (options.fuzzy
                             && (dice(itemValue, value) >= options.minDC

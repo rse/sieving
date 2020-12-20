@@ -102,10 +102,10 @@ bareword "bareword"
 
 quoted "single-quoted or double-quoted string literal"
     =   "\"" s:((stringEscapedChar / [^"])*) "\"" {
-            return ast("string").set({ value: s.join(""), type: "quoted" })
+            return ast("string").set({ value: s.join(""), type: "double-quoted" })
         }
     /   "'" t:$(("\\'" / [^'])*) "'" {
-            return ast("string").set({ value: t.replace(/\\'/g, "'"), type: "quoted" })
+            return ast("string").set({ value: t.replace(/\\'/g, "'"), type: "single-quoted" })
         }
 
 stringEscapedChar "escaped string character"
