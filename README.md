@@ -40,14 +40,10 @@ UNION(
         UNION(
             INTERSECT(
                 MATCH("foo"),
-                BOOST(MATCH("bar"), 1)
-            ),
-            MATCH("baz")
-        ),
-        MATCH("quux")
-    ),
-    MATCH("baz")
-)
+                BOOST(MATCH("bar"), 1)),
+            MATCH("baz")),
+        MATCH("quux")),
+    MATCH("baz"))
 ```
 
 Installation
