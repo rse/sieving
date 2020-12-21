@@ -56,7 +56,10 @@ operation "operation option"
         }
 
 namespace "namespace option"
-    =   id:id ":" {
+    =   ch:$([$#%@&]) {
+            return ast("namespace").set({ ns: ch })
+        }
+    /   id:id ":" {
             return ast("namespace").set({ ns: id.get("value") })
         }
 

@@ -45,6 +45,7 @@ class Sieving {
         /*  determine options  */
         this.options = Object.assign({}, {
             wrap:      true,
+            nsIds:     [],
             fieldId:   "id",
             fieldPrio: "prio",
             fieldNs:   ""
@@ -96,6 +97,23 @@ class Sieving {
             const { line, column } = node.pos()
             throw new Error("parse: negated terms only not allowed " +
                 `(line ${line}, column ${column})`)
+        }
+        nodes = this.ast.query(`
+            .// term [ @ns ]
+        `)
+        if (nodes.length > 0) {
+            for (const node of nodes) {
+                const ns = node.get("ns")
+                if (this.options.nsIds.indexOf(ns) < 0) {
+                    const { line, column } = node.pos()
+                    if (ns.match(/^[$#%@&]$/))
+                        throw new Error(`parse: namespace symbol "${ns}" not allowed ` +
+                            `(line ${line}, column ${column})`)
+                    else
+                        throw new Error(`parse: namespace identifier "${ns}" not allowed ` +
+                            `(line ${line}, column ${column})`)
+                }
+            }
         }
     }
 
@@ -153,8 +171,12 @@ class Sieving {
                 const type  = node.get("type")
                 const value = node.get("value")
                 const boost = node.get("boost")
-                if (ns)
-                    query += `${ns}:`
+                if (ns) {
+                    if (ns.match(/^[$#%@&]$/))
+                        query += ns
+                    else
+                        query += `${ns}:`
+                }
                 if (type === "regexp")
                     query += value.toString()
                 else if (type === "double-quoted") {
