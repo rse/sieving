@@ -38,16 +38,16 @@ declare module "Sieving" {
         /*  parse query into an internal AST  */
         parse(
             query:         string    /*  query string  */
-        ): void;
+        ): void
 
         /*  dump internal AST as text (for debugging purposes only)  */
         dump(
             colorize?:     boolean   /*  whether to colorize output (default: true)  */
-        ): string;
+        ): string
 
         /*  format internal AST into query string  */
         format(
-        ): string;
+        ): string
 
         /*  evaluate internal AST (for custom matching)  */
         evaluate(
@@ -56,7 +56,7 @@ declare module "Sieving" {
                 type:      string,   /*  term type ("regexp", "glob", "quoted", or "bare")  */
                 value:     string    /*  term value  */
             ) => any[]
-        ): any[];
+        ): any[]
 
         /*  sieve items by evaluating query with standard matching  */
         sieve(
@@ -66,7 +66,7 @@ declare module "Sieving" {
                 maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
                 minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
             }
-        ): any[];
+        ): any[]
 
         /*  sieve items by evaluating query with standard matching (stand-alone)  */
         static sieve(
@@ -83,7 +83,7 @@ declare module "Sieving" {
                 minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
                 debug:     boolean   /*  whether to dump the internal AST to stdout  */
             }
-        ): any[];
+        ): any[]
     }
     export = Sieving
 }
