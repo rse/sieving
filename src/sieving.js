@@ -140,7 +140,11 @@ class Sieving {
     }
 
     /*  format Abstract Syntax Tree (AST) into query string  */
-    format () {
+    format (format = "text") {
+        /*  sanity check arguments  */
+        if (!format.match(/^(?:text|html)$/))
+            throw new Error("invalid format argument")
+
         /*  evaluate an AST node  */
         const formatNode = (node) => {
             let query = ""
@@ -150,7 +154,8 @@ class Sieving {
                     /*  format query  */
                     query += formatNode(node) /* RECURSION */
                     if (i < nodes.length - 1)
-                        query += ", "
+                        query += format === "html" ?
+                            "<span class=\"comma\">,</span><span class=\"ws\"> </span>" : ", "
                 })
             }
             else if (node.type() === "query") {
@@ -158,11 +163,11 @@ class Sieving {
                 node.query("/ term").forEach((node) => {
                     /*  format term  */
                     if (query !== "")
-                        query += " "
+                        query += format === "html" ? "<span class=\"ws\"> </span>" : " "
                     if (node.get("op") === "union")
-                        query += "+"
+                        query += format === "html" ? "<span class=\"union\">+</span>" : "+"
                     else if (node.get("op") === "subtraction")
-                        query += "-"
+                        query += format === "html" ? "<span class=\"subtract\">-</span>" : "-"
                     query += formatNode(node) /* RECURSION */
                 })
             }
@@ -174,12 +179,13 @@ class Sieving {
                 const boost = node.get("boost")
                 if (ns) {
                     if (ns.match(/^[$#%@&]$/))
-                        query += ns
+                        query += format === "html" ? `<span class=\"ns\">${ns}</span>` : ns
                     else
-                        query += `${ns}:`
+                        query += format === "html" ? `<span class=\"ns\">${ns}:</span>` : `${ns}:`
                 }
                 if (type === "regexp")
-                    query += value.toString()
+                    query += format === "html" ?
+                        `<span class=\"regexp\">${value.toString()}:</span>` : value.toString()
                 else if (type === "double-quoted") {
                     const escape = (ch) => {
                         if      (ch === "\\")   return "\\\\"
@@ -199,14 +205,40 @@ class Sieving {
                         else
                             return ch
                     }
+                    if (format === "html")
+                        query += "<span class=\"double-quoted\">"
                     query += "\"" + value.replace(/(?:.|\r|\n)/g, (c) => escape(c)) + "\""
+                    if (format === "html")
+                        query += "</span>"
                 }
-                else if (type === "single-quoted")
+                else if (type === "single-quoted") {
+                    if (format === "html")
+                        query += "<span class=\"single-quoted\">"
                     query += "'" + value.replace(/'/g, "\\'") + "'"
-                else
+                    if (format === "html")
+                        query += "</span>"
+                }
+                else if (type === "glob") {
+                    if (format === "html")
+                        query += "<span class=\"glob\">"
                     query += value
-                if (boost)
+                    if (format === "html")
+                        query += "</span>"
+                }
+                else if (type === "bare") {
+                    if (format === "html")
+                        query += "<span class=\"bare\">"
+                    query += value
+                    if (format === "html")
+                        query += "</span>"
+                }
+                if (boost) {
+                    if (format === "html")
+                        query += "<span class=\"boost\">"
                     query += (boost === 1 ? "^" : `^${boost}`)
+                    if (format === "html")
+                        query += "</span>"
+                }
             }
             return query
         }

@@ -47,6 +47,7 @@ declare module "Sieving" {
 
         /*  format internal AST into query string  */
         format(
+           format:         string    /*  format of output (default "text" or alternative "html")  */
         ): string
 
         /*  evaluate internal AST (for custom matching)  */
