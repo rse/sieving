@@ -101,7 +101,7 @@ queries    ::=  query ("," query)*                  // union of queries
 query      ::=  term (" " term)*                    // intersection of terms
 term       ::=  operation? namespace? text boost?   // single query term
 operation  ::=  "+" | "-"                           // force union or subtraction of term
-namespace  ::=  id ":"                              // match against a particular namespace
+namespace  ::=  symbol | id ":"                     // match against a particular namespace
 text       ::=  quoted | regexp | glob | bareword   // four variants of the term
 boost      ::=  "^" number?                         // optionally boost the results
 quoted     ::=  /"(\\"|[^"])*"/ | /'(\\'|[^'])*'/   // double- or single-quoted term
@@ -109,6 +109,8 @@ regexp     ::=  /\/(\\\/|[^\/])*\//                 // regular expression term
 glob       ::=  /.*[*?[\]{}].*/                     // glob-style term
 bareword   ::=  /.+/                                // bareword term
 number     ::=  /\d*\.\d+/ | /\d+/                  // floating or integer number
+symbol     ::=  /^[$#%@&]$/                         // namesapce symbol
+id         ::=  /^[a-zA-Z][a-zA-Z0-9-_]*$/          // namespace identifier
 ```
 
 Application Programming Interface (API)
