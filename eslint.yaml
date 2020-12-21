@@ -67,4 +67,5 @@ rules:
     node/no-path-concat:                 off
     no-useless-escape:                   off
     no-control-regex:                    off
+    multiline-ternary:                   off
 
