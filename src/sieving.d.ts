@@ -28,6 +28,7 @@ declare module "Sieving" {
         public constructor(
             options?: {
                 wrap:      boolean,  /*  whether to internally wrap items (default: true)  */
+                nsIds:     string[], /*  list of allowed namespace identifier and namespace symbols (default: [])  */
                 fieldId:   string,   /*  name of identifier field in items (default: "id")  */
                 fieldPrio: string,   /*  name of priority field in items (default: "prio" ) */
                 fieldNs:   string    /*  name of namespace field in items (default: "")  */
@@ -73,6 +74,7 @@ declare module "Sieving" {
             query: string,           /*  query string  */
             options?: {
                 wrap:      boolean,  /*  whether to internally wrap items (default: true)  */
+                nsIds:     string[], /*  list of allowed namespace identifier and namespace symbols (default: [])  */
                 fieldId:   string,   /*  name of identifier field in items (default: "id")  */
                 fieldPrio: string,   /*  name of priority field in items (default: "prio" ) */
                 fieldNs:   string,   /*  name of namespace field in items (default: "")  */
