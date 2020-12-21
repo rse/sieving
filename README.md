@@ -26,7 +26,13 @@ A query like...
 foo bar^ +baz -quux, baz
 ```
 
-...logically means:
+...on a result set basis and mathematically means:
+
+```
+(((MATCH("foo") ∪ BOOST(MATCH("bar"), 1)) ∩ MATCH("baz")) ∖ MATCH("quux")) ∪ MATCH("baz")
+```
+
+or expressed in a functional way:
 
 ```
 UNION(
