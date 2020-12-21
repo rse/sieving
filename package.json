@@ -1,6 +1,6 @@
 {
     "name":        "sieving",
-    "version":     "0.9.26",
+    "version":     "1.0.0",
     "description": "Query-Based Item-List Reduction for JavaScript",
     "keywords":    [ "query", "language", "item", "list", "reduction", "filtering" ],
     "browser":     "./lib/sieving.browser.js",
