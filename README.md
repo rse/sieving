@@ -20,6 +20,30 @@ Browser or Node.js environments. Internally, Sieving is based on a
 full-blown query parser, supports optional fuzzy matching of items, and
 supports union, intersection and subtraction of the result sets.
 
+A query like...
+
+```
+foo bar^ +baz -quux, baz
+```
+
+...logically means:
+
+```
+UNION(
+    SUBTRACT(
+        UNION(
+            INTERSECT(
+                MATCH("foo"),
+                BOOST(MATCH("bar"), 1)
+            ),
+            MATCH("baz")
+        ),
+        MATCH("quux")
+    ),
+    MATCH("baz")
+)
+```
+
 Installation
 ------------
 
