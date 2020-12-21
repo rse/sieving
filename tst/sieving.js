@@ -64,5 +64,11 @@ describe("Sieving Library", () => {
         expect(sieve(items, "'foo' +'bar' +'quux'")).deep.equal([ "foo", "bar", "quux" ])
         expect(sieve(items, "'foo' +'bar'^ +'quux'^2")).deep.equal([ "quux", "bar", "foo" ])
     })
+    it("formatting", () => {
+        const sieving = new Sieving({ nsIds: [ "#", "foo" ] })
+        const query = "foo foo*bar 'foo' \"foo\" /foo\s+bar/ +foo -foo #foo foo:bar"
+        sieving.parse(query)
+        expect(sieving.format()).equal(query)
+    })
 })
 
