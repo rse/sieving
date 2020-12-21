@@ -43,13 +43,14 @@ class Sieving {
     /*  create API instance  */
     constructor (options = {}) {
         /*  determine options  */
-        this.options = Object.assign({}, {
+        this.options = {
             wrap:      true,
             nsIds:     [],
             fieldId:   "id",
             fieldPrio: "prio",
-            fieldNs:   ""
-        }, options)
+            fieldNs:   "",
+            ...options
+        }
 
         /*  initialize internal state  */
         this.ast = null
@@ -354,11 +355,12 @@ class Sieving {
             throw new Error("sieve: still no AST of query available")
 
         /*  determine options  */
-        options = Object.assign({}, {
+        options = {
             fuzzy:  false,
             maxLS:  2,
-            minDC:  0.50
-        }, options)
+            minDC:  0.50,
+            ...options
+        }
 
         /*  evaluate the AST  */
         return this.evaluate((ns, type, value) => {
