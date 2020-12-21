@@ -293,10 +293,10 @@ class Sieving {
             }
             else if (node.type() === "term") {
                 /*  gather information  */
-                const ns    = node.get("ns")    || this.options.fieldNs
+                const ns    = node.get("ns")    ?? this.options.fieldNs
                 const type  = node.get("type")
                 const value = node.get("value")
-                const boost = node.get("boost") || 0
+                const boost = node.get("boost") ?? 0
 
                 /*  retrieve single result list via callback  */
                 result = queryResults(ns, type, value)
