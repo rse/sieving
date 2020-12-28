@@ -6,17 +6,17 @@
     "browser":     "./lib/sieving.browser.js",
     "main":        "./lib/sieving.node.js",
     "repository": {
-        "type": "git",
-        "url":  "https://github.com/rse/sieving.git"
+        "type":    "git",
+        "url":     "https://github.com/rse/sieving.git"
     },
     "author": {
-        "name":  "Dr. Ralf S. Engelschall",
-        "email": "rse@engelschall.com",
-        "url":   "http://engelschall.com"
+        "name":     "Dr. Ralf S. Engelschall",
+        "email":    "rse@engelschall.com",
+        "url":      "http://engelschall.com"
     },
-    "license":  "MIT",
-    "homepage": "https://github.com/rse/sieving",
-    "bugs":     "https://github.com/rse/sieving/issues",
+    "license":     "MIT",
+    "homepage":    "https://github.com/rse/sieving",
+    "bugs":        "https://github.com/rse/sieving/issues",
     "dependencies": {
         "asty-astq":                                 "1.13.2",
         "pegjs-otf":                                 "1.2.17",
