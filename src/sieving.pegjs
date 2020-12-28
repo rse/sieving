@@ -33,52 +33,95 @@ root
         }
 
 queries
-    =   _ first:query rest:(_ "," _ query)* _ {
-            return ast("queries").add(unroll(first, rest, 3))
+    =   prolog:ws? head:query tail:(outerUnionOperation query)+ epilog:ws? {
+            let queries = head
+            for (const item of tail) {
+                let [ op, query ] = item
+                queries = op.add(queries, query)
+            }
+            if (prolog) queries.set("prolog", prolog + (queries.get("prolog") || ""))
+            if (epilog) queries.set("epilog", (queries.get("epilog") || "") + epilog)
+            return queries
+        }
+    /   prolog:ws? query:query epilog:ws? {
+            if (prolog) query.set("prolog", prolog + (query.get("prolog") || ""))
+            if (epilog) query.set("epilog", (query.get("epilog") || "") + epilog)
+            return query
         }
 
 query
-    =   first:term rest:(ws term)* {
-            return ast("query").add(unroll(first, rest, 1))
+    =   head:term tail:(ws op:operation? ws? term)+ {
+            let result = head
+            for (const item of tail) {
+                let [ ws, op, ws2, term ] = item
+                if (!op) {
+                    let pos = term.pos()
+                    op = ast("intersection").set({ text: "" })
+                        .pos(pos.line, pos.column, pos.offset)
+                }
+                op.set({ prolog: ws.get("text") })
+                if (ws2)
+                    op.set({ epilog: ws2.get("text") })
+                result = op.add(result, term)
+            }
+            return result
         }
+    /   term
 
 term
-    =   op:operation? ns:namespace? term:(regexp / glob / quoted / bareword) boost:boost? {
-            return ast("term").merge(op).merge(ns).merge(term).merge(boost)
+    =   prolog:$("(") queries:queries epilog:$(")") {
+            return ast("group").set({ prolog: prolog, epilog: epilog }).add(queries)
+        }
+    /   ns:namespace? term:(regexp / glob / quoted / bareword) boost:boost? {
+            let result = ast("term")
+            if (ns)
+                result.add(ns)
+            result.add(term)
+            if (boost)
+                result.add(boost)
+            return result
         }
 
-operation "operation option"
-    =   "+" {
-            return ast("operation").set({ op: "union" })
-        }
-    /   "-" {
-            return ast("operation").set({ op: "subtraction" })
+outerUnionOperation "outer union operation"
+    =   ws? "," ws? {
+            return ast("union").set({ text: text() })
         }
 
-namespace "namespace option"
+operation "intersection/union/subtraction operation"
+    =   $("=" / "&") {
+            return ast("intersection").set({ text: text() })
+        }
+    /   $("+" / "|") {
+            return ast("union").set({ text: text() })
+        }
+    /   $("-" / "!") {
+            return ast("subtraction").set({ text: text() })
+        }
+
+namespace "namespace"
     =   ch:$([$#%@&]) {
-            return ast("namespace").set({ ns: ch })
+            return ast("namespace").set({ text: text(), value: ch })
         }
     /   id:id ":" {
-            return ast("namespace").set({ ns: id.get("value") })
+            return ast("namespace").set({ text: text(), value: id.get("value") })
         }
 
-boost "boost option"
+boost "boost"
     =   "^" n:number? {
-            return ast("boost").set({ boost: n ? n.get("value") : 1 })
+            return ast("boost").set({ text: text(), value: n ? n.get("value") : 1 })
         }
 
 number "numeric literal"
     =   n:$([0-9]* "." [0-9]+) {
-            return ast("number").set({ value: parseFloat(n) })
+            return ast("number").set({ text: text(), value: parseFloat(n) })
         }
     /   n:$([0-9]+) {
-            return ast("number").set({ value: parseInt(n, 10) })
+            return ast("number").set({ text: text(), value: parseInt(n, 10) })
         }
 
 id "identifier"
     =   s:$([a-zA-Z][a-zA-Z0-9-_]*) {
-            return ast("id").set({ value: s })
+            return ast("id").set({ text: text(), value: s })
         }
 
 regexp "regular expression literal"
@@ -86,35 +129,34 @@ regexp "regular expression literal"
             var v
             try { v = new RegExp(re.replace(/\\\//g, "/")) }
             catch (e) { error(e.message) }
-            return ast("regex", true).set({ value: v, type: "regexp" })
+            return ast("regexp").set({ text: text(), value: v })
         }
 
-glob "glob"
+glob "glob literal"
     =   s:$(
-            (![*?\[\]{}\r\n\t\v\f ,~^+-] .)*
+            (![*?\[\]{}\r\n\t\v\f (),^+-] .)*
             ("*" / "?" / "[" / "]" / "{" / "}")
-            (![\r\n\t\v\f ,~^+-] .)*
+            (![\r\n\t\v\f (),^+-] .)*
         ) {
-            return ast("string").set({ value: s, type: "glob" })
+            return ast("glob").set({ text: text(), value: s })
         }
 
-bareword "bareword"
-    =   s:$((![\r\n\t\v\f ,~^+-] .)+) {
-            return ast("string").set({ value: s, type: "bare" })
+bareword "bareword literal"
+    =   s:$((![\r\n\t\v\f (),^+-] .)+) {
+            return ast("bareword").set({ text: text(), value: s })
         }
 
 quoted "single-quoted or double-quoted string literal"
     =   "\"" s:((stringEscapedChar / [^"])*) "\"" {
-            return ast("string").set({ value: s.join(""), type: "double-quoted" })
+            return ast("dquoted").set({ text: text(), value: s.join("") })
         }
     /   "'" t:$(("\\'" / [^'])*) "'" {
-            return ast("string").set({ value: t.replace(/\\'/g, "'"), type: "single-quoted" })
+            return ast("squoted").set({ text: text(), value: t.replace(/\\'/g, "'") })
         }
 
 stringEscapedChar "escaped string character"
     =   "\\\\" { return "\\"   }
     /   "\\\"" { return "\""   }
-    /   "'"    { return "'"    }
     /   "\\b"  { return "\b"   }
     /   "\\v"  { return "\x0B" }
     /   "\\f"  { return "\f"   }
@@ -129,11 +171,10 @@ stringEscapedChar "escaped string character"
             return String.fromCharCode(parseInt(n, 16))
         }
 
-_ "optional whitespace"
-    =   ws*
-
 ws "whitespaces"
-    =   [ \t\r\n]+
+    =   $([ \t\r\n]+) {
+            return ast("ws").set({ text: text() })
+        }
 
 eof "end of file"
     =   !.

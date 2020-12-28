@@ -61,7 +61,6 @@ module.exports = function (grunt) {
                         "pegjs-otf/transform"
                     ],
                     plugin: [
-                        [ "browserify-derequire" ],
                         [ "browserify-header" ]
                     ],
                     browserifyOptions: {
@@ -105,7 +104,8 @@ module.exports = function (grunt) {
                         "object-hash",
                         "minimatch",
                         "dice-coefficient",
-                        "fast-levenshtein"
+                        "fast-levenshtein",
+                        "tokenizr"
                     ],
                     browserifyOptions: {
                         standalone: "Sieving",

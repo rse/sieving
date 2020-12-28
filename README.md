@@ -162,7 +162,11 @@ declare module "Sieving" {
 
         /*  parse query into an internal AST  */
         parse(
-            query: string            /*  query string  */
+            query:         string,   /*  query string  */
+            options?: {
+                lts:       boolean,  /*  parse query string into LST (default: true)  */
+                ast:       boolean   /*  parse query string into AST (default: true)  */
+            }
         ): void
 
         /*  dump internal AST as text (for debugging purposes only)  */
@@ -172,14 +176,14 @@ declare module "Sieving" {
 
         /*  format internal AST into query string  */
         format(
-           format:         string    /*  format of output (default "text" or alternative "html")  */
+           format:         string    /*  format of output (default "text", or "html", "xml" or "json")  */
         ): string
 
         /*  evaluate internal AST (for custom matching)  */
         evaluate(
             queryResults: (
                 ns:        string,   /*  term namespace (default: "")  */
-                type:      string,   /*  term type ("regexp", "glob", "quoted", or "bare")  */
+                type:      string,   /*  term type ("regexp", "glob", "squoted", "dquoted", or "bareword")  */
                 value:     string    /*  term value  */
             ) => any[]
         ): any[]
@@ -188,7 +192,7 @@ declare module "Sieving" {
         sieve(
             items: any[],            /*  list of items to sieve/filter  */
             options?: {
-                fuzzy:     boolean   /*  whether to fuzzy match quoted and bare terms (default: false)  */
+                fuzzy:     boolean,  /*  whether to fuzzy match quoted and bare terms (default: false)  */
                 maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
                 minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
             }

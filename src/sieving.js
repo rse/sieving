@@ -31,6 +31,7 @@ const objectHash  = require("object-hash")
 const minimatch   = require("minimatch")
 const dice        = require("dice-coefficient")
 const levenshtein = require("fast-levenshtein")
+const Tokenizr    = require("tokenizr")
 
 /*  pre-parse PEG grammar (replaced by browserify)  */
 const PEGparser = PEG.generateFromFile(`${__dirname}/sieving.pegjs`, {
@@ -53,198 +54,274 @@ class Sieving {
         }
 
         /*  initialize internal state  */
-        this.ast = null
+        this.query = null
+        this.lts   = null
+        this.ast   = null
     }
 
     /*  parse query string into Abstract Syntax Tree (AST)  */
-    parse (query) {
+    parse (query, options = {}) {
         /*  sanity check argument  */
         if (typeof query !== "string")
-            throw new Error("invalid query argument")
+            throw new Error("parse: invalid \"query\" argument")
+        if (typeof options !== "object")
+            throw new Error("parse: invalid \"options\" argument")
 
-        /*  parse specification into Abstract Syntax Tree (AST)  */
-        const asty = new ASTY()
-        const result = PEGUtil.parse(PEGparser, query, {
-            startRule: "root",
-            makeAST: (line, column, offset, args) => {
-                return asty.create.apply(asty, args).pos(line, column, offset)
-            }
-        })
-        if (result.error !== null)
-            throw new Error("parse: query parsing failure:\n" +
-                PEGUtil.errorMessage(result.error, true).replace(/^/mg, "ERROR: ") + "\n")
-        this.ast = result.ast
-
-        /*  post-process AST: sanity check structure  */
-        let nodes = this.ast.query(`
-            .// term [
-                @op == "subtraction" && @boost
-            ]
-        `)
-        if (nodes.length > 0) {
-            const node = nodes[0]
-            const { line, column } = node.pos()
-            throw new Error("parse: boosting not allowed on negated term " +
-                `(line ${line}, column ${column}): "${node.get("value")}"`)
+        /*  determine options  */
+        options = {
+            lts: true,
+            ast: true,
+            ...options
         }
-        nodes = this.ast.query(`
-            .// query [
-                / term [ @op == "subtraction" ] &&
-                count(/ term [ @op != "subtraction" ]) == 0
-            ]
-        `)
-        if (nodes.length > 0) {
-            const node = nodes[0]
-            const { line, column } = node.pos()
-            throw new Error("parse: negated terms only not allowed " +
-                `(line ${line}, column ${column})`)
+
+        /*  store query  */
+        this.query = query
+
+        /*
+         *  ==== tokenize query string into a Linear Token Stream (LTS) ====
+         */
+
+        this.lts = null
+        if (options.lts) {
+            /*  define tokenizer  */
+            const tokenizer = new Tokenizr()
+            tokenizer.rule(/\s+/, (ctx, match) => {
+                ctx.accept("ws")
+            })
+            tokenizer.rule(/\+/, (ctx, match) => {
+                ctx.accept("union", "+")
+            })
+            tokenizer.rule(/-/, (ctx, match) => {
+                ctx.accept("subtraction", "-")
+            })
+            tokenizer.rule(/,/, (ctx, match) => {
+                ctx.accept("union", ",")
+            })
+            tokenizer.rule(/[$#%@&]/, (ctx, match) => {
+                ctx.accept("namespace")
+            })
+            tokenizer.rule(/([a-zA-Z_][a-zA-Z_0-9]*):/, (ctx, match) => {
+                ctx.accept("namespace", match[1])
+            })
+            tokenizer.rule(/"((?:\\\"|[^"])*)"/, (ctx, match) => {
+                const value = match[1]
+                    .replace(/\\\\/g, "\\").replace(/\\"/g, "\"").replace(/\\"/g, "\"")
+                    .replace(/\\b/g, "\b").replace(/\\v/g, "\v").replace(/\\f/g, "\f")
+                    .replace(/\\t/g, "\t").replace(/\\n/g, "\n").replace(/\\r/g, "\r")
+                    .replace(/\\e/g, "\e")
+                    .replace(/\\x([0-9a-fA-f]{2})/g, (_, num) => String.fromCharCode(parseInt(num, 16)))
+                    .replace(/\\u([0-9a-fA-f]{4})/g, (_, num) => String.fromCharCode(parseInt(num, 16)))
+                ctx.accept("dquoted", value)
+            })
+            tokenizer.rule(/'((?:\\\'|[^'])*)'/, (ctx, match) => {
+                const value = match[1].replace(/\\'/g, "'")
+                ctx.accept("squoted", value)
+            })
+            tokenizer.rule(/\/((?:\\\/|[^/])*)\//, (ctx, match) => {
+                let value = null
+                try {
+                    value = new RegExp(match[1])
+                }
+                catch (ex) {
+                    value = null
+                }
+                if (value !== null)
+                    ctx.accept("regexp", value)
+                else
+                    ctx.reject()
+            })
+            tokenizer.rule(/[^*?\[\]{}\r\n\t\v\f (),^+-]*[*?\[\]{}][^\r\n\t\v\f (),^+-]*/, (ctx, match) => {
+                ctx.accept("glob")
+            })
+            /*
+            tokenizer.rule(/[^*?\[\]{}\r\n\t\v\f (),^+-]+/, (ctx, match) => {
+                ctx.accept("bareword")
+            })
+            */
+            tokenizer.rule(/[a-zA-ZäöüÄÖÜß0-9_]+/, (ctx, match) => {
+                ctx.accept("bareword")
+            })
+            tokenizer.rule(/\^(\d*)/, (ctx, match) => {
+                ctx.accept("boost", match[1] ? parseInt(match[1]) : 1)
+            })
+            tokenizer.rule(/[()]/, (ctx, match) => {
+                ctx.accept("group")
+            })
+            tokenizer.rule(/.+$/, (ctx, match) => {
+                ctx.accept("error")
+            })
+
+            /*  tokenize the query  */
+            try {
+                tokenizer.input(query)
+                this.lts = tokenizer.tokens()
+            }
+            catch (err) {
+                throw new Error(`parse: query tokenizing failed: ${err}`)
+            }
         }
-        nodes = this.ast.query(`
-            .// term [ @ns ]
-        `)
-        if (nodes.length > 0) {
-            for (const node of nodes) {
-                const ns = node.get("ns")
-                if (this.options.nsIds.indexOf(ns) < 0) {
-                    const { line, column } = node.pos()
-                    if (ns.match(/^[$#%@&]$/))
-                        throw new Error(`parse: namespace symbol "${ns}" not allowed ` +
-                            `(line ${line}, column ${column})`)
-                    else
-                        throw new Error(`parse: namespace identifier "${ns}" not allowed ` +
-                            `(line ${line}, column ${column})`)
+
+        /*
+         *  ==== parse query string into Abstract Syntax Tree (AST) ====
+         */
+
+        this.ast = null
+        if (options.ast) {
+            /*  parse specification into Abstract Syntax Tree (AST)  */
+            const asty = new ASTY()
+            const result = PEGUtil.parse(PEGparser, query, {
+                startRule: "root",
+                makeAST: (line, column, offset, args) => {
+                    return asty.create.apply(asty, args).pos(line, column, offset)
                 }
-            }
-        }
-    }
+            })
+            if (result.error !== null)
+                throw new Error("parse: query parsing failure:\n" +
+                    PEGUtil.errorMessage(result.error, true).replace(/^/mg, "ERROR: ") + "\n")
+            this.ast = result.ast
 
-    /*  dump the Abstract Syntax Tree (AST) with colorization  */
-    dump (colorize = true) {
-        /*  sanity check context  */
-        if (this.ast === null)
-            throw new Error("evaluate: still no AST of query available")
-
-        /*  pass-through control to ASTy's dump functionality  */
-        return this.ast.dump(Infinity, (type, text) => {
-            if (colorize) {
-                switch (type) {
-                    case "tree":     text = chalk.grey(text);   break
-                    case "type":     text = chalk.blue(text);   break
-                    case "value":    text = chalk.yellow(text); break
-                    case "position": text = chalk.grey(text);   break
-                    default:
-                }
+            /*  post-process AST: sanity check structure  */
+            let nodes = this.ast.query(`
+                .// term [
+                    @op == "subtraction" && @boost
+                ]
+            `)
+            if (nodes.length > 0) {
+                const node = nodes[0]
+                const { line, column } = node.pos()
+                throw new Error("parse: boosting not allowed on negated term " +
+                    `(line ${line}, column ${column}): "${node.get("value")}"`)
             }
-            return text
-        })
-    }
-
-    /*  format Abstract Syntax Tree (AST) into query string  */
-    format (format = "text") {
-        /*  sanity check arguments  */
-        if (!format.match(/^(?:text|html)$/))
-            throw new Error("invalid format argument")
-
-        /*  evaluate an AST node  */
-        const formatNode = (node) => {
-            let query = ""
-            if (node.type() === "queries") {
-                /*  format all queries  */
-                node.query("/ query").forEach((node, i, nodes) => {
-                    /*  format query  */
-                    query += formatNode(node) /* RECURSION */
-                    if (i < nodes.length - 1)
-                        query += format === "html" ?
-                            "<span class=\"comma\">,</span><span class=\"ws\"> </span>" : ", "
-                })
+            nodes = this.ast.query(`
+                .// query [
+                    / term [ @op == "subtraction" ] &&
+                    count(/ term [ @op != "subtraction" ]) == 0
+                ]
+            `)
+            if (nodes.length > 0) {
+                const node = nodes[0]
+                const { line, column } = node.pos()
+                throw new Error("parse: negated terms only not allowed " +
+                    `(line ${line}, column ${column})`)
             }
-            else if (node.type() === "query") {
-                /*  format all terms  */
-                node.query("/ term").forEach((node) => {
-                    /*  format term  */
-                    if (query !== "")
-                        query += format === "html" ? "<span class=\"ws\"> </span>" : " "
-                    if (node.get("op") === "union")
-                        query += format === "html" ? "<span class=\"union\">+</span>" : "+"
-                    else if (node.get("op") === "subtraction")
-                        query += format === "html" ? "<span class=\"subtract\">-</span>" : "-"
-                    query += formatNode(node) /* RECURSION */
-                })
-            }
-            else if (node.type() === "term") {
-                /*  format single term  */
-                const ns    = node.get("ns")
-                const type  = node.get("type")
-                const value = node.get("value")
-                const boost = node.get("boost")
-                if (ns) {
-                    if (ns.match(/^[$#%@&]$/))
-                        query += format === "html" ? `<span class=\"ns\">${ns}</span>` : ns
-                    else
-                        query += format === "html" ? `<span class=\"ns\">${ns}:</span>` : `${ns}:`
-                }
-                if (type === "regexp")
-                    query += format === "html" ?
-                        `<span class=\"regexp\">${value.toString()}:</span>` : value.toString()
-                else if (type === "double-quoted") {
-                    const escape = (ch) => {
-                        if      (ch === "\\")   return "\\\\"
-                        else if (ch === "\"")   return "\\\""
-                        else if (ch === "'")    return "'"
-                        else if (ch === "\b")   return "\\b"
-                        else if (ch === "\x0b") return "\\v"
-                        else if (ch === "\f")   return "\\f"
-                        else if (ch === "\t")   return "\\t"
-                        else if (ch === "\r")   return "\\r"
-                        else if (ch === "\n")   return "\\n"
-                        else if (ch === "\e")   return "\\e"
-                        else if (ch.match(/^[\x00-\x1f\x7f-\xff]$/))
-                            return `\\x${ch.charCodeAt(0).toString(16).padStart(2, "0")}`
-                        else if (ch.charCodeAt(0) > 0xff)
-                            return `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`
+            nodes = this.ast.query(`
+                .// term [ @ns ]
+            `)
+            if (nodes.length > 0) {
+                for (const node of nodes) {
+                    const ns = node.get("ns")
+                    if (this.options.nsIds.indexOf(ns) < 0) {
+                        const { line, column } = node.pos()
+                        if (ns.match(/^[$#%@&]$/))
+                            throw new Error(`parse: namespace symbol "${ns}" not allowed ` +
+                                `(line ${line}, column ${column})`)
                         else
-                            return ch
+                            throw new Error(`parse: namespace identifier "${ns}" not allowed ` +
+                                `(line ${line}, column ${column})`)
                     }
-                    if (format === "html")
-                        query += "<span class=\"double-quoted\">"
-                    query += "\"" + value.replace(/(?:.|\r|\n)/g, (c) => escape(c)) + "\""
-                    if (format === "html")
-                        query += "</span>"
-                }
-                else if (type === "single-quoted") {
-                    if (format === "html")
-                        query += "<span class=\"single-quoted\">"
-                    query += "'" + value.replace(/'/g, "\\'") + "'"
-                    if (format === "html")
-                        query += "</span>"
-                }
-                else if (type === "glob") {
-                    if (format === "html")
-                        query += "<span class=\"glob\">"
-                    query += value
-                    if (format === "html")
-                        query += "</span>"
-                }
-                else if (type === "bare") {
-                    if (format === "html")
-                        query += "<span class=\"bare\">"
-                    query += value
-                    if (format === "html")
-                        query += "</span>"
-                }
-                if (boost) {
-                    if (format === "html")
-                        query += "<span class=\"boost\">"
-                    query += (boost === 1 ? "^" : `^${boost}`)
-                    if (format === "html")
-                        query += "</span>"
                 }
             }
-            return query
+        }
+    }
+
+    /*  dump the Linear Token Stream (LTS) and Abstract Syntax Tree (AST) with colorization  */
+    dump (colorize = true) {
+        let output = ""
+
+        /*  dump query  */
+        let title = "Query String:"
+        output += `${colorize ? chalk.inverse.bold(title) : title}\n`
+        if (colorize)
+            output += chalk.blue(this.query)
+        else
+            output += this.query
+        output += "\n\n"
+
+        /*  dump LST  */
+        title = "Linear Token Stream:"
+        output += `${colorize ? chalk.inverse.bold(title) : title}\n`
+        if (this.lts === null)
+            output += "(still no LTS available)"
+        else {
+            for (const token of this.lts) {
+                output += token.toString((type, text) => {
+                    if (colorize) {
+                        switch (type) {
+                            case "type":   text = chalk.blue(text);   break
+                            case "value":  text = chalk.green(text);  break
+                            case "text":   text = chalk.yellow(text); break
+                            case "pos":    text = chalk.yellow(text); break
+                            case "line":   text = chalk.yellow(text); break
+                            case "column": text = chalk.yellow(text); break
+                            default:
+                        }
+                    }
+                    return text
+                }) + "\n"
+            }
+            output += "\n"
         }
 
-        /*  format AST from the root node  */
-        return formatNode(this.ast)
+        /*  dump AST  */
+        title = "Abstract Syntax Tree:"
+        output += `${colorize ? chalk.inverse.bold(title) : title}\n`
+        if (this.ast === null)
+            output += "(still no AST available)"
+        else {
+            output += this.ast.dump(Infinity, (type, text) => {
+                if (colorize) {
+                    switch (type) {
+                        case "tree":     text = chalk.grey(text);   break
+                        case "type":     text = chalk.blue(text);   break
+                        case "value":    text = chalk.yellow(text); break
+                        case "position": text = chalk.grey(text);   break
+                        default:
+                    }
+                }
+                return text
+            })
+        }
+
+        return output
+    }
+
+    /*  format query string into a linear token stream  */
+    format (format = "text") {
+        /*  sanity check argument  */
+        if (!(typeof format === "string" && format.match(/^(?:text|xml|html|json)/)))
+            throw new Error("format: invalid \"format\" argument")
+
+        /*  sanity check context  */
+        if (this.lts === null)
+            throw new Error("format: still no LTS of query available")
+
+        /*  iterate over all tokens  */
+        let output = ""
+        const xmlEscape = (text) => {
+            return text
+                .replace(/\&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+        }
+        for (const token of this.lts) {
+            if (token.type === "EOF")
+                continue
+            if (format === "text")
+                output += token.text
+            else if (format === "xml")
+                output += `<${token.type}>${xmlEscape(token.text)}</${token.type}>\n`
+            else if (format === "html")
+                output += `<span class="${token.type}">${xmlEscape(token.text)}</span>\n`
+            else if (format === "json")
+                output += `{ type: "${token.type}", text: ${JSON.stringify(token.text)} },\n`
+        }
+        if (format === "xml")
+            output = `<query>\n${output}</query>\n`
+        else if (format === "html")
+            output = `<span class="query">\n${output}</span>\n`
+        else if (format === "json")
+            output = `[\n${output}]\n`
+        return output
     }
 
     /*  evaluate the Abstract Syntax Tree (AST)  */
@@ -299,37 +376,38 @@ class Sieving {
         /*  evaluate an AST node  */
         const evaluateNode = (node) => {
             let result = null
-            if (node.type() === "queries") {
-                /*  evaluate all queries  */
-                node.query("/ query").forEach((node) => {
-                    /*  evaluate query  */
-                    const subResult = evaluateNode(node) /* RECURSION */
-
-                    /*  process results  */
-                    result = (result !== null ? listUnion(result, subResult) : subResult)
-                })
+            if (node.type() === "union") {
+                const [ n1, n2 ] = node.childs()
+                const r1 = evaluateNode(n1) /* RECURSION */
+                const r2 = evaluateNode(n2) /* RECURSION */
+                result = listUnion(r1, r2)
             }
-            else if (node.type() === "query") {
-                /*  evaluate all terms  */
-                node.query("/ term").forEach((node) => {
-                    /*  evaluate term  */
-                    const subResult = evaluateNode(node) /* RECURSION */
-
-                    /*  process results  */
-                    if (node.get("op") === "union")
-                        result = (result !== null ? listUnion(result, subResult) : subResult)
-                    else if (node.get("op") === "subtraction")
-                        result = (result !== null ? listSubtraction(result, subResult) : [])
-                    else
-                        result = (result !== null ? listIntersection(result, subResult) : subResult)
-                })
+            else if (node.type() === "intersection") {
+                const [ n1, n2 ] = node.childs()
+                const r1 = evaluateNode(n1) /* RECURSION */
+                const r2 = evaluateNode(n2) /* RECURSION */
+                result = listIntersection(r1, r2)
+            }
+            else if (node.type() === "subtraction") {
+                const [ n1, n2 ] = node.childs()
+                const r1 = evaluateNode(n1) /* RECURSION */
+                const r2 = evaluateNode(n2) /* RECURSION */
+                result = listSubtraction(r1, r2)
+            }
+            else if (node.type() === "group") {
+                const n1 = node.child(0)
+                result = evaluateNode(n1) /* RECURSION */
             }
             else if (node.type() === "term") {
+                const nN = node.query("/ ns")
+                const nM = node.query("/ squoted, / dquoted, / regexp, / glob, / bareword")
+                const nB = node.query("/ boost")
+
                 /*  gather information  */
-                const ns    = node.get("ns")    ?? this.options.fieldNs
-                const type  = node.get("type")
-                const value = node.get("value")
-                const boost = node.get("boost") ?? 0
+                const ns    = nN.length === 1 ? nN[0].get("value") : this.options.fieldNs
+                const type  = nM[0].type()
+                const value = nM[0].get("value")
+                const boost = nB.length === 1 ? nB[0].get("value") : 0
 
                 /*  retrieve single result list via callback  */
                 result = queryResults(ns, type, value)
@@ -378,9 +456,9 @@ class Sieving {
     sieve (items, options = {}) {
         /*  sanity check arguments  */
         if (!(typeof items === "object" && items instanceof Array))
-            throw new Error("filter: invalid items argument (expected array)")
+            throw new Error("sieve: invalid items argument (expected array)")
         if (typeof options !== "object")
-            throw new Error("filter: invalid options argument (expected object)")
+            throw new Error("sieve: invalid options argument (expected object)")
 
         /*  sanity check context  */
         if (this.ast === null)
@@ -402,7 +480,7 @@ class Sieving {
                 else if (typeof item === "object" && ns !== "" && item[ns] !== undefined)
                     return item[ns]
                 else
-                    throw new Error("filter: cannot determine item value of item")
+                    throw new Error("sieve: cannot determine item value of item")
             }
             return items.filter((item) => {
                 const itemValue = valueOfItem(item)
@@ -410,18 +488,18 @@ class Sieving {
                     return value.exec(itemValue)
                 else if (type === "glob")
                     return minimatch(itemValue, `*${value}*`)
-                else if (type === "double-quoted" || type === "single-quoted")
+                else if (type === "dquoted" || type === "squoted")
                     return (itemValue === value
                         || (options.fuzzy
                             && (dice(itemValue, value) >= options.minDC
                                 || levenshtein.get(itemValue, value) <= options.maxLS)))
-                else if (type === "bare")
+                else if (type === "bareword")
                     return (itemValue.indexOf(value) >= 0
                         || (options.fuzzy
                             && (dice(itemValue, value) >= options.minDC
                                 || levenshtein.get(itemValue, value) <= options.maxLS)))
                 else
-                    throw new Error("filter: invalid type")
+                    throw new Error("sieve: invalid type")
             })
         })
     }
@@ -431,7 +509,7 @@ class Sieving {
         const sieving = new Sieving(options)
         sieving.parse(query)
         if (options.debug)
-            sieving.dump()
+            console.log(sieving.dump())
         return sieving.sieve(items, options)
     }
 }
