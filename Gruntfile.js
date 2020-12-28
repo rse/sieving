@@ -57,7 +57,7 @@ module.exports = function (grunt) {
                                 "regenerator": false
                             } ] ]
                         } ],
-                        [ "uglifyify", { sourceMap: false, global: true } ],
+                        [ "uglifyify", { sourceMap: false, global: false } ],
                         "pegjs-otf/transform"
                     ],
                     plugin: [
