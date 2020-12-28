@@ -61,6 +61,7 @@ module.exports = function (grunt) {
                         "pegjs-otf/transform"
                     ],
                     plugin: [
+                        [ "browserify-derequire" ],
                         [ "browserify-header" ]
                     ],
                     browserifyOptions: {
@@ -89,11 +90,9 @@ module.exports = function (grunt) {
                                 "regenerator": false
                             } ] ]
                         } ],
-                        [ "uglifyify", { sourceMap: false, global: true } ],
                         "pegjs-otf/transform"
                     ],
                     plugin: [
-                        [ "browserify-derequire" ],
                         [ "browserify-header" ]
                     ],
                     external: [
