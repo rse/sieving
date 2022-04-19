@@ -136,7 +136,7 @@ regexp     ::=  /\/(\\\/|[^\/])*\//                 // regular expression term
 glob       ::=  /.*[*?[\]{}].*/                     // glob-style term
 bareword   ::=  /.+/                                // bareword term
 number     ::=  /\d*\.\d+/ | /\d+/                  // floating or integer number
-symbol     ::=  /^[$#%@&]$/                         // namesapce symbol
+symbol     ::=  /^[$#%@&]$/                         // namespace symbol
 id         ::=  /^[a-zA-Z][a-zA-Z0-9-_]*$/          // namespace identifier
 ```
 
