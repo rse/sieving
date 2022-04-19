@@ -29,12 +29,10 @@ extends:
     - eslint-config-standard
 
 parserOptions:
-    ecmaVersion: 8
+    ecmaVersion: 12
     sourceType:  module
     ecmaFeatures:
         jsx:     false
-
-parser: babel-eslint
 
 env:
     browser:       true
@@ -68,4 +66,5 @@ rules:
     no-useless-escape:                   off
     no-control-regex:                    off
     multiline-ternary:                   off
+    n/no-path-concat:                    off
 
