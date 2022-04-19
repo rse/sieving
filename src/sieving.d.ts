@@ -27,11 +27,8 @@ declare module "Sieving" {
         /*  create Sieving instance  */
         public constructor(
             options?: {
-                wrap:      boolean,  /*  whether to internally wrap items (default: true)  */
-                nsIds:     string[], /*  list of allowed namespace identifier and namespace symbols (default: [])  */
-                fieldId:   string,   /*  name of identifier field in items (default: "id")  */
-                fieldPrio: string,   /*  name of priority field in items (default: "prio" ) */
-                fieldNs:   string    /*  name of namespace field in items (default: "")  */
+                fieldsVal: string[], /*  names of fields in items of type object (default: [ "value" ])  */
+                fieldId:   string    /*  name of optional field of unique identifier in items of type object (default: "id")  */
             }
         )
 

@@ -29,7 +29,16 @@ chai.config.includeStack = true
 const Sieving = require("../lib/sieving.node.js")
 const sieve = Sieving.sieve
 
-const items = [ "foo", "bar", "baz", "quux", "foo bar baz quux" ]
+const items  = [
+    "foo", "bar", "baz", "quux", "foo bar baz quux"
+]
+const items2 = [
+    { value: "foo" },
+    { value: "bar" },
+    { value: "baz" },
+    { ns1: "quux" },
+    { ns1: "foo bar baz quux" }
+]
 
 describe("Sieving Library", () => {
     it("API availability", function () {
@@ -64,11 +73,10 @@ describe("Sieving Library", () => {
         expect(sieve(items, "'foo' +'bar' +'quux'")).deep.equal([ "foo", "bar", "quux" ])
         expect(sieve(items, "'foo' +'bar'^ +'quux'^2")).deep.equal([ "quux", "bar", "foo" ])
     })
-    it("formatting", () => {
-        const sieving = new Sieving({ nsIds: [ "#", "foo" ] })
-        const query = "foo foo*bar 'foo' \"foo\" /foo\s+bar/ +foo -foo #foo foo:bar"
-        sieving.parse(query)
-        expect(sieving.format()).equal(query)
+    it("object querying", () => {
+        expect(sieve(items2, "foo",        { fieldsVal: [ "value", "ns1" ] })).deep.equal([ { value: "foo" } ])
+        expect(sieve(items2, "value:foo",  { fieldsVal: [ "value", "ns1" ] })).deep.equal([ { value: "foo" } ])
+        expect(sieve(items2, "ns1:'quux'", { fieldsVal: [ "value", "ns1" ] })).deep.equal([ { ns1: "quux" } ])
     })
 })
 

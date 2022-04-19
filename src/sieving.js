@@ -45,11 +45,8 @@ class Sieving {
     constructor (options = {}) {
         /*  determine options  */
         this.options = {
-            wrap:      true,
-            nsIds:     [],
+            fieldsVal: [ "value" ],
             fieldId:   "id",
-            fieldPrio: "prio",
-            fieldNs:   "",
             ...options
         }
 
@@ -205,12 +202,12 @@ class Sieving {
                     `(line ${line}, column ${column})`)
             }
             nodes = this.ast.query(`
-                .// term [ @ns ]
+                .// term / namespace
             `)
             if (nodes.length > 0) {
                 for (const node of nodes) {
-                    const ns = node.get("ns")
-                    if (this.options.nsIds.indexOf(ns) < 0) {
+                    const ns = node.get("value")
+                    if (this.options.fieldsVal.indexOf(ns) < 0) {
                         const { line, column } = node.pos()
                         if (ns.match(/^[$#%@&]$/))
                             throw new Error(`parse: namespace symbol "${ns}" not allowed ` +
@@ -222,6 +219,7 @@ class Sieving {
                 }
             }
         }
+        return this
     }
 
     /*  dump the Linear Token Stream (LTS) and Abstract Syntax Tree (AST) with colorization  */
@@ -334,16 +332,20 @@ class Sieving {
         if (this.ast === null)
             throw new Error("evaluate: still no AST of query available")
 
+        /*  initialize internal state  */
+        const mapId   = new Map()
+        const mapPrio = new Map()
+
         /*  perform set-operations on result lists  */
         const listUnion = (a, b) => {
             const r = []
             const idx = {}
             a.forEach((x) => {
                 r.push(x)
-                idx[x[this.options.fieldId]] = true
+                idx[mapId.get(x)] = true
             })
             b.forEach((x) => {
-                if (!idx[x[this.options.fieldId]])
+                if (!idx[mapId.get(x)])
                     r.push(x)
             })
             return r
@@ -352,10 +354,10 @@ class Sieving {
             const r = []
             const idx = {}
             b.forEach((x) => {
-                idx[x[this.options.fieldId]] = x
+                idx[mapId.get(x)] = x
             })
             a.forEach((x) => {
-                if (idx[x[this.options.fieldId]])
+                if (idx[mapId.get(x)])
                     r.push(x)
             })
             return r
@@ -364,10 +366,10 @@ class Sieving {
             const r = []
             const idx = {}
             b.forEach((x) => {
-                idx[x[this.options.fieldId]] = x
+                idx[mapId.get(x)] = x
             })
             a.forEach((x) => {
-                if (!idx[x[this.options.fieldId]])
+                if (!idx[mapId.get(x)])
                     r.push(x)
             })
             return r
@@ -399,12 +401,12 @@ class Sieving {
                 result = evaluateNode(n1) /* RECURSION */
             }
             else if (node.type() === "term") {
-                const nN = node.query("/ ns")
+                const nN = node.query("/ namespace")
                 const nM = node.query("/ squoted, / dquoted, / regexp, / glob, / bareword")
                 const nB = node.query("/ boost")
 
                 /*  gather information  */
-                const ns    = nN.length === 1 ? nN[0].get("value") : this.options.fieldNs
+                const ns    = nN.length === 1 ? nN[0].get("value") : this.options.fieldsVal[0]
                 const type  = nM[0].type()
                 const value = nM[0].get("value")
                 const boost = nB.length === 1 ? nB[0].get("value") : 0
@@ -413,24 +415,15 @@ class Sieving {
                 result = queryResults(ns, type, value)
 
                 /*  post-process result  */
-                result = result.map((item) => {
-                    /*  optionally wrap result item  */
-                    if (this.options.wrap)
-                        item = { value: item }
+                result.forEach((item) => {
+                    /*  remember id  */
+                    if (item[this.options.fieldId] !== undefined)
+                        mapId.set(item, item[this.options.fieldId])
+                    else
+                        mapId.set(item, objectHash(item))
 
-                    /*  provide id field  */
-                    if (item[this.options.fieldId] === undefined)
-                        item[this.options.fieldId] = objectHash(this.options.wrap ? item.value : item)
-
-                    /*  provide priority field  */
-                    if (item[this.options.fieldPrio] === undefined)
-                        item[this.options.fieldPrio] = 1
-
-                    /*  optionally boost item  */
-                    if (boost !== 0)
-                        item[this.options.fieldPrio] *= (1 + boost)
-
-                    return item
+                    /*  remember priority, optionally boosted  */
+                    mapPrio.set(item, 1 + boost)
                 })
             }
             if (result === null)
@@ -442,13 +435,7 @@ class Sieving {
         let result = evaluateNode(this.ast)
 
         /*  sort result according to (boosted) priority  */
-        result = result.sort((a, b) =>
-            b[this.options.fieldPrio] - a[this.options.fieldPrio])
-
-        /*  optionally reduce to plain results again  */
-        if (this.options.wrap)
-            result = result.map((item) => item.value)
-
+        result = result.sort((a, b) => mapPrio.get(b) - mapPrio.get(a))
         return result
     }
 
@@ -480,10 +467,12 @@ class Sieving {
                 else if (typeof item === "object" && ns !== "" && item[ns] !== undefined)
                     return item[ns]
                 else
-                    throw new Error("sieve: cannot determine item value of item")
+                    return undefined
             }
             return items.filter((item) => {
                 const itemValue = valueOfItem(item)
+                if (itemValue === undefined)
+                    return false
                 if (type === "regexp")
                     return value.exec(itemValue)
                 else if (type === "glob")
