@@ -454,6 +454,7 @@ class Sieving {
         /*  determine options  */
         options = {
             fuzzy:  false,
+            nocase: false,
             maxLS:  2,
             minDC:  0.50,
             ...options
@@ -469,21 +470,32 @@ class Sieving {
                 else
                     return undefined
             }
+            const cache = new Map()
             return items.filter((item) => {
                 const itemValue = valueOfItem(item)
                 if (itemValue === undefined)
                     return false
-                if (type === "regexp")
+                if (type === "regexp" && !options.nocase)
                     return value.exec(itemValue)
+                else if (type === "regexp" && options.nocase) {
+                    let regexp = cache.get(value)
+                    if (regexp === undefined) {
+                        regexp = new RegExp(value, "i")
+                        cache.set(value, regexp)
+                    }
+                    return regexp.exec(itemValue)
+                }
                 else if (type === "glob")
-                    return minimatch(itemValue, `*${value}*`)
+                    return minimatch(itemValue, `*${value}*`, { nocase: options.nocase })
                 else if (type === "dquoted" || type === "squoted")
-                    return (itemValue === value
+                    return ((!options.nocase && itemValue === value)
+                        || (options.nocase && itemValue.toLowerCase() === value.toLowerCase())
                         || (options.fuzzy
                             && (dice(itemValue, value) >= options.minDC
                                 || levenshtein.get(itemValue, value) <= options.maxLS)))
                 else if (type === "bareword")
-                    return (itemValue.indexOf(value) >= 0
+                    return ((!options.nocase && itemValue.indexOf(value) >= 0)
+                        || (options.nocase && itemValue.toLowerCase().indexOf(value.toLowerCase()) >= 0)
                         || (options.fuzzy
                             && (dice(itemValue, value) >= options.minDC
                                 || levenshtein.get(itemValue, value) <= options.maxLS)))

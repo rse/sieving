@@ -190,6 +190,7 @@ declare module "Sieving" {
             items: any[],            /*  list of items to sieve/filter  */
             options?: {
                 fuzzy:     boolean,  /*  whether to fuzzy match quoted and bare terms (default: false)  */
+                nocase:    boolean,  /*  whether to match case-insensitive (default: false)  */
                 maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
                 minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
             }
@@ -203,6 +204,7 @@ declare module "Sieving" {
                 fieldsVal: string[], /*  names of fields in items of type object (default: [ "value" ])  */
                 fieldId:   string    /*  name of optional field of unique identifier in items of type object (default: "id")  */
                 fuzzy:     boolean,  /*  whether to fuzzy match quoted and bare terms (default: false)  */
+                nocase:    boolean,  /*  whether to match case-insensitive (default: false)  */
                 maxLS:     number,   /*  maximum Levenshtein distance for fuzzy matching (default: 2)  */
                 minDC:     number    /*  minimum Dice-Coefficient for fuzzy matching (default: 0.50)  */
                 debug:     boolean   /*  whether to dump the internal AST to stdout  */
