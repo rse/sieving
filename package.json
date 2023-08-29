@@ -7,7 +7,7 @@
     "main":                                  "./lib/sieving.node.js",
     "repository": {
         "type":                              "git",
-        "url":                               "https://github.com/rse/sieving.git"
+        "url":                               "git+https://github.com/rse/sieving.git"
     },
     "author": {
         "name":                              "Dr. Ralf S. Engelschall",
