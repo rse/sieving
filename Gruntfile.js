@@ -81,7 +81,7 @@ module.exports = function (grunt) {
                             presets: [
                                 [ "@babel/preset-env", {
                                     "targets": {
-                                        "node": "10.0.0"
+                                        "node": "18.0.0"
                                     }
                                 } ]
                             ],
